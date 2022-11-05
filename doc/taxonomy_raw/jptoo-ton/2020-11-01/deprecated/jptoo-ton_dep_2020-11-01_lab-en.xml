@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  (c) Financial Services Agency, The Japanese Government.
+      All Rights Reserved.
+      For intellectual property policy and authorized uses of EDINET Taxonomy,
+      refer to “EDINET Taxonomy Legal Statement” at http://www.fsa.go.jp/search/EDINET_Taxonomy_Legal_Statement.html
+-->
+<link:linkbase xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xbrli="http://www.xbrl.org/2003/instance">
+  <link:roleRef roleURI="http://www.xbrl.org/2009/role/deprecatedDateLabel" xlink:type="simple" xlink:href="http://www.xbrl.org/lrr/role/deprecated-2009-12-16.xsd#deprecatedDateLabel"/>
+  <link:roleRef roleURI="http://www.xbrl.org/2009/role/deprecatedLabel" xlink:type="simple" xlink:href="http://www.xbrl.org/lrr/role/deprecated-2009-12-16.xsd#deprecatedLabel"/>
+  <link:labelLink xlink:type="extended" xlink:role="http://www.xbrl.org/2003/role/link">
+    <link:loc xlink:type="locator" xlink:href="jptoo-ton_dep_2020-11-01.xsd#jptoo-ton_cor_LegalDomicileHeading" xlink:label="LegalDomicileHeading"/>
+    <link:label xlink:type="resource" xlink:label="label_LegalDomicileHeading" xlink:role="http://www.xbrl.org/2009/role/deprecatedLabel" xml:lang="en" id="label_LegalDomicileHeading">Partial Revision of Ordinance on Disclosure of Tender Offers by Those Other than Issuer</link:label>
+    <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label" xlink:from="LegalDomicileHeading" xlink:to="label_LegalDomicileHeading"/>
+    <link:label xlink:type="resource" xlink:label="label_LegalDomicileHeading_2" xlink:role="http://www.xbrl.org/2009/role/deprecatedDateLabel" xml:lang="en" id="label_LegalDomicileHeading_2">2020-09-30</link:label>
+    <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label" xlink:from="LegalDomicileHeading" xlink:to="label_LegalDomicileHeading_2"/>
+    <link:loc xlink:type="locator" xlink:href="jptoo-ton_dep_2020-11-01.xsd#jptoo-ton_cor_LegalDomicileTextBlock" xlink:label="LegalDomicileTextBlock"/>
+    <link:label xlink:type="resource" xlink:label="label_LegalDomicileTextBlock" xlink:role="http://www.xbrl.org/2009/role/deprecatedLabel" xml:lang="en" id="label_LegalDomicileTextBlock">Partial Revision of Ordinance on Disclosure of Tender Offers by Those Other than Issuer</link:label>
+    <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label" xlink:from="LegalDomicileTextBlock" xlink:to="label_LegalDomicileTextBlock"/>
+    <link:label xlink:type="resource" xlink:label="label_LegalDomicileTextBlock_2" xlink:role="http://www.xbrl.org/2009/role/deprecatedDateLabel" xml:lang="en" id="label_LegalDomicileTextBlock_2">2020-09-30</link:label>
+    <link:labelArc xlink:type="arc" xlink:arcrole="http://www.xbrl.org/2003/arcrole/concept-label" xlink:from="LegalDomicileTextBlock" xlink:to="label_LegalDomicileTextBlock_2"/>
+  </link:labelLink>
+</link:linkbase>
