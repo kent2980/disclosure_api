@@ -88,7 +88,7 @@ class FinanceStatement:
                 summary = Summary(data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
                 print(summary.get_labeled_df())
 
-main = FinanceStatement("ZIP/20221026/081220221024548300.zip")
+main = FinanceStatement("D://ZIP/20221026/081220221024548300.zip")
 print(main.get_info())
 print(main.get_documents())
 main.get_data()

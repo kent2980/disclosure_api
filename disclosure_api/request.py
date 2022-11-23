@@ -144,4 +144,4 @@ class TdnetRequest:
             self.getXBRL_link(dte)
 
 fff = TdnetRequest("D://ZIP")
-fff.getXBRL_link_daterange()(date(2022,11,1), date.today())
+fff.getXBRL_link_daterange(date(2022,11,20), date.today())
