@@ -4,13 +4,22 @@ from bs4 import BeautifulSoup
 import glob
 import os
 from pandas import DataFrame
+import shutil
+import warnings
 
-class TaxonomyTsv:
+class CreateTaxonomy:
     """タクソノミTSVファイルを生成するクラス
     """
     def __init__(self, input_path:str="./doc/taxonomy_raw/", output_path:str="./doc/taxonomy_tsv/") -> None:
+        # 警告を非表示
+        warnings.simplefilter("ignore")
+        # 入力元・出力先フォルダのパスを初期化
         self.input_path = input_path
         self.output_path = output_path
+        # 出力先フォルダを初期化
+        if os.path.isdir(output_path) == True:
+            shutil.rmtree(output_path)
+        os.mkdir(output_path)
     
     def __attachment_taxonomy_df(self, arg_path) -> DataFrame:
         '''
@@ -155,7 +164,7 @@ class TaxonomyTsv:
 
         return df_merged
         
-    def attachment_taxonomy_tsv(self):
+    def attachment_taxonomy_tsv(self) -> bool:
         
         # 各labファイルのパスを格納するリストの定義
         list_path_taxonomy = []
@@ -166,9 +175,7 @@ class TaxonomyTsv:
         list_path_taxonomy.extend(glob.glob(self.input_path + '**/jpigp/**/label/**_lab.xml', recursive=True)) # 米国基準用タクソノミ
         
         for filePath in list_path_taxonomy:
-            print(filePath)
-            dirfile = os.path.isfile(filePath)
-            print(dirfile)
+            
             df_global_label = self.__attachment_taxonomy_df(filePath)
 
             ########## TSVファイルの保存名を指定 ##########
@@ -177,7 +184,9 @@ class TaxonomyTsv:
             # TSVファイルにタクソノミを書き出す
             df_global_label.to_csv(self.output_path + filename, sep ='\t', encoding='UTF-8', mode='a', header=False, index=False)
 
-    def summary_taxonomy_tsv(self):
+        return os.path.isfile(self.output_path + filename)
+        
+    def summary_taxonomy_tsv(self) -> bool:
         
         # 各labファイルのパスを格納するリストの定義
         list_path_taxonomy = []
@@ -186,8 +195,7 @@ class TaxonomyTsv:
         list_path_taxonomy.extend(glob.glob(self.input_path + 'tdnet/**-lab.xml', recursive=True)) # 決算短信用タクソノミ
         
         for filePath in list_path_taxonomy:
-            dirfile = os.path.isfile(filePath)
-            print(dirfile)
+            
             df_global_label = self.__summary_taxonomy_df(filePath)
 
             ########## TSVファイルの保存名を指定 ##########
@@ -196,7 +204,4 @@ class TaxonomyTsv:
             # TSVファイルにタクソノミを書き出す
             df_global_label.to_csv(self.output_path + filename, sep ='\t', encoding='UTF-8', mode='a', header=False, index=False)
 
-play = TaxonomyTsv()
-print(play.input_path)
-play.attachment_taxonomy_tsv()
-play.summary_taxonomy_tsv()
+        return os.path.isfile(self.output_path + filename)
