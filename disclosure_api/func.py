@@ -6,6 +6,8 @@ import os
 import const
 from xbrl.summary import Summary
 from xbrl.attachment import Attachment
+from bs4 import BeautifulSoup as bs
+from pandas import DataFrame
 
 class NotZipFileExample(Exception):
     def __str__(self) -> str:
@@ -84,11 +86,85 @@ class FinanceStatement:
     
     def get_data(self):
         for (file, data) in self.file_datas.items():
-            if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
-                summary = Summary(data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
-                print(summary.get_labeled_df())
+            if re.compile("^.*/Attachment/.*-lab.xml$").match(file) is not None:
+                local_taxonomy = str(file)
+            if re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
+                print(file)
+                summary = Attachment(data, "doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy)
+                summary.get_labeled_df().to_csv("test.csv")
+    
+    def __def__(self):
+        for (file, data) in self.file_datas.items():
+            if re.compile("^.*/Attachment/.*-def.xml").match(file) is not None:
+                soup = bs(data, "lxml")
+                # link:definitionArc タグのみ抽出
+                
+                definitionTag = soup.find_all("link:definitionarc")
+                # dictを格納する空のリスト
+                list_def = []
+                # dictを作成し、リストに追加する
+                for tag in definitionTag:
+                    dict_def = {}
+                    dict_def["type"] = tag.get("xlink:type")
+                    dict_def["from"] = tag.get("xlink:from")
+                    dict_def["to"] = tag.get("xlink:to")
+                    dict_def["arcrole"] = tag.get("xlink:arcrole")
+                    dict_def["order"] = tag.get("order")
+                    list_def.append(dict_def)
+                
+                # dictを格納したリストをDataFrameに変換
+                df = DataFrame(list_def)
+                df.to_csv("def.csv")
+    
+    def __cal__(self):
+        for (file, data) in self.file_datas.items():
+            if re.compile("^.*/Attachment/.*-cal.xml").match(file) is not None:
+                soup = bs(data, "lxml")
+                # link:definitionArc タグのみ抽出
+                
+                cal_tag = soup.find_all("link:calculationarc")
+                # dictを格納する空のリスト
+                list_cal = []
+                # dictを作成し、リストに追加する
+                for tag in cal_tag:
+                    dict_cal = {}
+                    dict_cal["type"] = tag.get("xlink:type")
+                    dict_cal["from"] = tag.get("xlink:from")
+                    dict_cal["to"] = tag.get("xlink:to")
+                    dict_cal["arcrole"] = tag.get("xlink:arcrole")
+                    dict_cal["order"] = tag.get("order")
+                    dict_cal["weight"] = tag.get("weight")
+                    list_cal.append(dict_cal)
+                
+                # dictを格納したリストをDataFrameに変換
+                df = DataFrame(list_cal)
+                df.to_csv("cal.csv")
+
+    def __pre__(self):
+        for (file, data) in self.file_datas.items():
+            if re.compile("^.*/Attachment/.*-pre.xml").match(file) is not None:
+                soup = bs(data, "lxml")
+                # link:definitionArc タグのみ抽出
+                
+                pre_tag = soup.find_all("link:presentationarc")
+                # dictを格納する空のリスト
+                list_pre = []
+                # dictを作成し、リストに追加する
+                for tag in pre_tag:
+                    dict_pre = {}
+                    dict_pre["type"] = tag.get("xlink:type")
+                    dict_pre["from"] = tag.get("xlink:from")
+                    dict_pre["to"] = tag.get("xlink:to")
+                    dict_pre["arcrole"] = tag.get("xlink:arcrole")
+                    dict_pre["order"] = tag.get("order")
+                    dict_pre["weight"] = tag.get("weight")
+                    list_pre.append(dict_pre)
+                
+                # dictを格納したリストをDataFrameに変換
+                df = DataFrame(list_pre)
+                df.to_csv("pre.csv")
 
 main = FinanceStatement("D://ZIP/20221026/081220221024548300.zip")
 print(main.get_info())
 print(main.get_documents())
-main.get_data()
+main.__pre__()

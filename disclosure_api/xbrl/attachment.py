@@ -38,6 +38,7 @@ class Attachment(ITdnetCollection):
             'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfIncomeTextBlock',
             'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfComprehensiveIncomeTextBlock',
             'jpcrp_cor:QuarterlyConsolidatedStatementOfCashFlowsTextBlock',
+            'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfComprehensiveIncomeSingleStatementTextBlock',
             # 四半期決算短信[IFRS]
             'jpigp_cor:CondensedQuarterlyConsolidatedStatementOfFinancialPositionIFRSTextBlock',
             'jpigp_cor:CondensedYearToQuarterEndConsolidatedStatementOfProfitOrLossIFRSTextBlock',
@@ -49,19 +50,11 @@ class Attachment(ITdnetCollection):
         # 各財務諸表を入れるカラのDFを作成
         
         list_fs = []
-        # 可能性のある財務諸表区分ごとにループ処理でDF作成
-        # dict_tagのキーの中には、財務諸表本表に関係のない注記情報に関するキーもあるため、必要な本表に絞ってループ処理
-        for each_target_fs in list_target_fs:
-            # ターゲットとなるFS区分のタグを取得
-            tag_each_fs = dict_tag.get(each_target_fs)
-            # 辞書型の値をgetして、値がなければnoneが返る。noneはfalse扱いのため、これを条件に分岐。
-            if tag_each_fs:
-                # 財務諸表要素は'ix:nonFraction'に入っているため、このタグを取得
-                tag_nonfraction = soup.find_all('ix:nonfraction')
-                # 財務諸表の各要素をDFに。財務諸表区分とタグを引数にして関数に渡す。
-                df_each_fs = self.get_df(tag_nonfraction)
-                df_each_fs['fs_class'] = each_target_fs
-                list_fs.append(df_each_fs)
+        # 財務諸表要素は'ix:nonFraction'に入っているため、このタグを取得
+        tag_nonfraction = soup.find_all('ix:nonfraction')
+        # 財務諸表の各要素をDFに。財務諸表区分とタグを引数にして関数に渡す。
+        df_each_fs = self.get_df(tag_nonfraction)
+        list_fs.append(df_each_fs)
 
         # タグの中にtarget_FSが含まれない場合（例えば注記だけのixbrlを読み込んだ場合）の分岐
         if list_fs:
@@ -69,7 +62,7 @@ class Attachment(ITdnetCollection):
             df_fs = pd.concat(list_fs)
 
             # 並べ替え
-            df_fs = df_fs[['fs_class', 'account_item', 'contextRef', 'format', 'decimals', 'scale', 'unitRef', 'amount']]
+            df_fs = df_fs[['account_item', 'contextRef', 'format', 'decimals', 'scale', 'unitRef', 'amount']]
 
         else:
             df_fs = pd.DataFrame(index=[])
@@ -80,7 +73,6 @@ class Attachment(ITdnetCollection):
         
         # arg_fsの読み込み
         arg_fs = self.get_fs(self.data)
-        
         # arg_label_localの読み込み
         arg_label_local = self.__get_label_local(self.local_taxonomy_data)
         
