@@ -31,24 +31,7 @@ class Attachment(ITdnetCollection):
         for tag in tags_nonnumeric:
             dict_tag[tag.get('name')] = tag
 
-        # 取得対象となりうる財務諸表の`name`一覧定義
-        list_target_fs = [
-            # 四半期決算短信[日本基準]
-            'jpcrp_cor:QuarterlyConsolidatedBalanceSheetTextBlock',
-            'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfIncomeTextBlock',
-            'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfComprehensiveIncomeTextBlock',
-            'jpcrp_cor:QuarterlyConsolidatedStatementOfCashFlowsTextBlock',
-            'jpcrp_cor:YearToQuarterEndConsolidatedStatementOfComprehensiveIncomeSingleStatementTextBlock',
-            # 四半期決算短信[IFRS]
-            'jpigp_cor:CondensedQuarterlyConsolidatedStatementOfFinancialPositionIFRSTextBlock',
-            'jpigp_cor:CondensedYearToQuarterEndConsolidatedStatementOfProfitOrLossIFRSTextBlock',
-            'jpigp_cor:CondensedYearToQuarterEndConsolidatedStatementOfComprehensiveIncomeIFRSTextBlock',
-            'jpigp_cor:CondensedQuarterlyConsolidatedStatementOfChangesInEquityIFRSTextBlock',
-            'jpigp_cor:CondensedQuarterlyConsolidatedStatementOfCashFlowsIFRSTextBlock'
-            ]
-
-        # 各財務諸表を入れるカラのDFを作成
-        
+        # 各財務諸表を入れるカラのDFを作成        
         list_fs = []
         # 財務諸表要素は'ix:nonFraction'に入っているため、このタグを取得
         tag_nonfraction = soup.find_all('ix:nonfraction')
@@ -107,7 +90,6 @@ class Attachment(ITdnetCollection):
             # 削除で統一した結果、各社で定義していた汎用的な科目名（「貸借対照表計上額」など）が重複するようになる。後続処理で重複削除。
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('[a-z]{5}_cor_', '')
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('[a-z]{3}-[a-z]{8}-[0-9]{5}_', '')
-            df_label_local.to_csv('df_label_local.csv')
             
             # ラベルの最初に'label_'で始まるラベルがあり、削除で統一
             
@@ -173,5 +155,5 @@ class Attachment(ITdnetCollection):
 
         # ラベル情報取得結果をDFに    
         df_label_local = pd.DataFrame(list_label)
-
+        
         return df_label_local

@@ -40,14 +40,11 @@ class Summary(ITdnetCollection):
         df_label_global = df_label_global[['xlink_label', 'label']]
         
         # 'label_'はじまりを削除で統一
-        df_label_global['xlink_label'] = df_label_global['xlink_label'].str.replace('label_', '')
-        df_label_global.to_csv('df_label_global.csv')
-        
+        df_label_global['xlink_label'] = df_label_global['xlink_label'].str.replace('label_', '')        
         df_label_merged = df_label_global
         
         # 結合用ラベル列作成
         arg_fs['temp_label'] = arg_fs['account_item'].str.replace('[a-z]{3}-[a-z]{2}-[a-z]{1}:', '')
-        arg_fs.to_csv('arg_fs.csv')
 
         # ラベルの結合
         df_labeled_fs = pd.merge(arg_fs, df_label_merged, left_on='temp_label', right_on='xlink_label', how='left').drop_duplicates()
