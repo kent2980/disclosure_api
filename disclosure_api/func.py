@@ -23,9 +23,6 @@ class NoneDocumentCodeException(Exception):
     def __str__(self) -> str:
         return f"{self.documents} から検索対象の書類キーを選択してください。"
 
-class NotSummaryInfo(Exception):
-    def __str__(self) -> str:
-        return "サマリ情報が存在しません。この操作は無効です。"
 
 class FinanceStatement:
 
@@ -97,14 +94,20 @@ class FinanceStatement:
         """
         files = {}
         for (file, _) in self.file_datas.items():
-            if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
-                file_name = str(file)[str(file).find("tse"):].split("-")
-                files[file_name[1][-6:-2]
-                      ] = const.STATEMENT["report"][file_name[1][-6:-2]]
             if re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
                 m = re.search("[0-9]{7}", file).start()
                 file_name = str(file)[m:].split("-")
                 files[file_name[1]] = const.STATEMENT["split"][file_name[1]]
+            elif re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
+                file_ = os.path.basename(file)
+                file_name = str(file_).split("-")
+                files[file_name[1][-6:-2]
+                      ] = const.STATEMENT["report"][file_name[1][-6:-2]]
+            elif re.compile("^.*-ixbrl.htm$").match(file) is not None:
+                file_ = os.path.basename(file)
+                file_name = str(file_).split("-")
+                files[file_name[1]
+                      ] = const.STATEMENT["report"][file_name[1]]
         return files
 
     def __get_AttachmentDF(self, document_key: str = None) -> DataFrame:
@@ -138,22 +141,22 @@ class FinanceStatement:
 
         # ファイルをDataFrameに変換
         for (file, data) in self.file_datas.items():
-            
+
             # 正規表現と比較してXBRLファイルを抽出
             if re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
-                
+
                 # ファイル名を分割
                 m = re.search("[0-9]{7}", file).start()
                 file_name = str(file)[m:].split("-")
-                
+
                 # ドキュメントコードと一致するファイルを抽出
                 if file_name[1] == document_key:
-                    
+
                     # DataFrameに変換
                     attachment = Attachment(
                         data, "doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy_data)
                     df = attachment.get_labeled_df()
-                    
+
                     # 各リンクファイルを結合
                     df = pd.merge(df, self.__cal_xml(
                     ), left_on="temp_label", right_on="cal_to", how="left")
@@ -164,24 +167,39 @@ class FinanceStatement:
 
         return df
 
-    def __get_SummaryInfo(self) -> DataFrame:
+    def __get_SummaryInfo(self, document_key:str=None) -> DataFrame:
+        
+        # 引数が未設定の場合例外を投げる
+        if document_key is None:
+            raise NoneDocumentCodeException(self.get_documents())
+        
         df = None
+        
         for (file, data) in self.file_datas.items():
+            # ファイル名をアンダーバーで分割
+            file_ = os.path.basename(file)
+            file_name = str(file_).split("-")
             # 正規表現と比較してXBRLファイルを抽出
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
-                summary = Summary(
-                    data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
-                df = summary.get_labeled_df()
+                if file_name[1][-6:-2] == document_key:
+                    summary = Summary(
+                        data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
+                    df = summary.get_labeled_df()
+            elif re.compile("^.*-ixbrl.htm$").match(file) is not None:
+                if file_name[1] == document_key:
+                    summary = Summary(
+                        data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
+                    df = summary.get_labeled_df()
         if df is None:
-            raise NotSummaryInfo()
+            raise NoneDocumentCodeException(self.get_documents())
         else:
             return df
-    
-    def get_dataframe(self, document_key:str=None) -> DataFrame:
-              
+
+    def get_dataframe(self, document_key: str = None) -> DataFrame:
+
         df = self.__get_AttachmentDF(document_key)
         if df is None:
-            df = self.__get_SummaryInfo()
+            df = self.__get_SummaryInfo(document_key)
         return df
 
     def __def_xml(self) -> DataFrame:
@@ -274,4 +292,3 @@ class FinanceStatement:
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
         return df
-

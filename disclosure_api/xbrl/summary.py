@@ -22,6 +22,9 @@ class Summary(ITdnetCollection):
         # 並べ替え
         df_each_fs = df_each_fs[['account_item', 'contextRef', 'format', 'decimals', 'scale', 'unitRef', 'amount']]
 
+        # 金額が空白の行は削除
+        df_each_fs = df_each_fs.drop(df_each_fs[df_each_fs['amount'] == ""].index)
+
         return df_each_fs
 
     def get_labeled_df(self):
