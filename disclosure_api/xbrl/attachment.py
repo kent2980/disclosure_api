@@ -76,7 +76,7 @@ class Attachment(ITdnetCollection):
         df_label_global['temp'] = 0
         
         # 標準ラベルのみ使用し、独自ラベルを持たない場合があるため、if分岐
-        if len(arg_label_local) > 0:
+        if arg_label_local is not None and len(arg_label_local) > 0:
             # 独自ラベルの処理
             
             # 独自ラベルデータのうち、必要列に絞る
@@ -133,27 +133,28 @@ class Attachment(ITdnetCollection):
             DataFrame: ローカルラベルのDataFrame
         """
         
-        # labファイルの読み込み
-        soup = BeautifulSoup(arg_data, 'lxml')
+        if arg_data is not None:
+            # labファイルの読み込み
+            soup = BeautifulSoup(arg_data, 'lxml')
 
-        # link:labelタグのみ抽出
-        link_label = soup.find_all('link:label')
+            # link:labelタグのみ抽出
+            link_label = soup.find_all('link:label')
 
-        # ラベル情報用dictを格納するカラのリストを作成
-        list_label = []
+            # ラベル情報用dictを格納するカラのリストを作成
+            list_label = []
 
-        # ラベル情報をループ処理で取得
-        for each_label in link_label:
-            dict_label = {}
-            dict_label['id'] = each_label.get('id')
-            dict_label['xlink_label'] = each_label.get('xlink:label')
-            dict_label['xlink_role'] = each_label.get('xlink:role')
-            dict_label['xlink_type'] = each_label.get('xlink:type')
-            dict_label['xml_lang'] = each_label.get('xml:lang')
-            dict_label['label'] = each_label.text
-            list_label.append(dict_label)
+            # ラベル情報をループ処理で取得
+            for each_label in link_label:
+                dict_label = {}
+                dict_label['id'] = each_label.get('id')
+                dict_label['xlink_label'] = each_label.get('xlink:label')
+                dict_label['xlink_role'] = each_label.get('xlink:role')
+                dict_label['xlink_type'] = each_label.get('xlink:type')
+                dict_label['xml_lang'] = each_label.get('xml:lang')
+                dict_label['label'] = each_label.text
+                list_label.append(dict_label)
 
-        # ラベル情報取得結果をDFに    
-        df_label_local = pd.DataFrame(list_label)
+            # ラベル情報取得結果をDFに    
+            df_label_local = pd.DataFrame(list_label)
         
-        return df_label_local
+            return df_label_local

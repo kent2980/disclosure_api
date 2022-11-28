@@ -17,11 +17,15 @@ class NotZipFileException(Exception):
 
 
 class NoneDocumentCodeException(Exception):
-    def __init__(self, documents:dict):
+    def __init__(self, documents: dict):
         self.documents = documents
-    def __str__(self) -> str:
-        return f"{documents}から検索対象の書類を選択してください。"
 
+    def __str__(self) -> str:
+        return f"{self.documents} から検索対象の書類キーを選択してください。"
+
+class NotSummaryInfo(Exception):
+    def __str__(self) -> str:
+        return "サマリ情報が存在しません。この操作は無効です。"
 
 class FinanceStatement:
 
@@ -75,7 +79,7 @@ class FinanceStatement:
             dict:基本情報 
         """
         infos = {}
-        for (file, data) in self.file_datas.items():
+        for (file, _) in self.file_datas.items():
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
                 file_name = str(file)[str(file).find("tse"):].split("-")
                 infos["id"] = file_name[3]
@@ -92,7 +96,7 @@ class FinanceStatement:
             dict: 書類一覧
         """
         files = {}
-        for (file, data) in self.file_datas.items():
+        for (file, _) in self.file_datas.items():
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
                 file_name = str(file)[str(file).find("tse"):].split("-")
                 files[file_name[1][-6:-2]
@@ -103,11 +107,11 @@ class FinanceStatement:
                 files[file_name[1]] = const.STATEMENT["split"][file_name[1]]
         return files
 
-    def __get_attachment_df(self, document_code: str = None) -> DataFrame:
+    def __get_AttachmentDF(self, document_key: str = None) -> DataFrame:
         """財務諸表をDataFrameとして出力します。
 
         Args:
-            document_code (str, optional): 書類コード
+            document_key (str, optional): 書類コード
 
         Raises:
             NoneDocumentCodeException: 書類コード未設定エラー
@@ -120,8 +124,11 @@ class FinanceStatement:
                 df = get_attachment_df(key)
         """
 
+        df = None
+        local_taxonomy_data = None
+
         # 引数が未設定の場合例外を投げる
-        if document_code is None:
+        if document_key is None:
             raise NoneDocumentCodeException(self.get_documents())
 
         # ローカルラベルを参照
@@ -131,66 +138,51 @@ class FinanceStatement:
 
         # ファイルをDataFrameに変換
         for (file, data) in self.file_datas.items():
+            
             # 正規表現と比較してXBRLファイルを抽出
             if re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
+                
                 # ファイル名を分割
                 m = re.search("[0-9]{7}", file).start()
                 file_name = str(file)[m:].split("-")
+                
                 # ドキュメントコードと一致するファイルを抽出
-                if file_name[1] == document_code:
+                if file_name[1] == document_key:
+                    
                     # DataFrameに変換
                     attachment = Attachment(
                         data, "doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy_data)
                     df = attachment.get_labeled_df()
+                    
                     # 各リンクファイルを結合
                     df = pd.merge(df, self.__cal_xml(
-                    ), left_on="account_item", right_on="cal_to", how="inner")
+                    ), left_on="temp_label", right_on="cal_to", how="left")
                     df = pd.merge(df, self.__def_xml(
-                    ), left_on="account_item", right_on="def_to", how="inner")
+                    ), left_on="temp_label", right_on="def_to", how="inner")
                     df = pd.merge(df, self.__pre_xml(
-                    ), left_on="account_item", right_on="pre_to", how="inner")
+                    ), left_on="temp_label", right_on="pre_to", how="left")
 
-                    return df
+        return df
 
-    def __get_summary_df(self, document_code: str = None) -> DataFrame:
-        if document_code is None:
-            raise NoneDocumentCodeException()
+    def __get_SummaryInfo(self) -> DataFrame:
+        df = None
         for (file, data) in self.file_datas.items():
             # 正規表現と比較してXBRLファイルを抽出
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
-                # ファイル名を分割
-                file_ = os.path.basename(file)
-                file_name = file_.split("-")
-                # ドキュメントコードと一致するファイルを抽出
-                if file_name[1][2:6] == document_code:
-
-                    summary = Summary(
-                        data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
-                    df = summary.get_labeled_df()
-
-                    return df
-
-    def get_dataframes(self):
-        dfs = {}
-        for (file, _) in self.file_datas.items():
-            # 正規表現と比較してXBRLファイルを抽出
-            if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
-                # ファイル名を分割
-                file_ = os.path.basename(file)
-                file_name = file_.split("-")
-                # ドキュメントコードと一致するファイルを抽出
-                key = file_name[1][2:6]
-                df = self.__get_summary_df(key)
-                dfs[key] = df
-            elif re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
-                # ファイル名を分割
-                file_ = os.path.basename(file)
-                file_name = file_.split("-")
-                # ドキュメントコードと一致するファイルを抽出
-                key = file_name[1]
-                df = self.__get_attachment_df(key)
-                dfs[key] = df
-        return dfs
+                summary = Summary(
+                    data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
+                df = summary.get_labeled_df()
+        if df is None:
+            raise NotSummaryInfo()
+        else:
+            return df
+    
+    def get_dataframe(self, document_key:str=None) -> DataFrame:
+              
+        df = self.__get_AttachmentDF(document_key)
+        if df is None:
+            df = self.__get_SummaryInfo()
+        return df
 
     def __def_xml(self) -> DataFrame:
         """定義リンクを出力します。
@@ -211,10 +203,8 @@ class FinanceStatement:
                 for tag in definitionTag:
                     dict_def = {}
                     dict_def["def_type"] = tag.get("xlink:type")
-                    dict_def["def_from"] = re.sub(
-                        "_(?=[a-zA-Z]+$)", ":", tag.get("xlink:from"))
-                    dict_def["def_to"] = re.sub(
-                        "_(?=[a-zA-Z]+$)", ":", tag.get("xlink:to"))
+                    dict_def["def_from"] = tag.get("xlink:from")
+                    dict_def["def_to"] = tag.get("xlink:to")
                     dict_def["def_arcrole"] = tag.get("xlink:arcrole")
                     dict_def["def_order"] = tag.get("order")
                     list_def.append(dict_def)
@@ -243,10 +233,8 @@ class FinanceStatement:
                     try:
                         dict_cal = {}
                         dict_cal["cal_type"] = tag.get("xlink:type")
-                        dict_cal["cal_from"] = re.sub(
-                            "_(?=[a-zA-Z]+$)", ":", tag.get("xlink:from"))
-                        dict_cal["cal_to"] = str(
-                            re.sub("_(?=[a-zA-Z]+$)", ":", tag.get("xlink:to")))
+                        dict_cal["cal_from"] = tag.get("xlink:from")
+                        dict_cal["cal_to"] = tag.get("xlink:to")
                         dict_cal["cal_arcrole"] = tag.get("xlink:arcrole")
                         dict_cal["cal_order"] = tag.get("order")
                         dict_cal["cal_weight"] = tag.get("weight")
@@ -277,10 +265,8 @@ class FinanceStatement:
                 for tag in pre_tag:
                     dict_pre = {}
                     dict_pre["pre_type"] = tag.get("xlink:type")
-                    dict_pre["pre_from"] = re.sub(
-                        "_(?=[a-zA-Z]+$)", ":", tag.get("xlink:from"))
-                    dict_pre["pre_to"] = re.sub(
-                        "_(?=[a-zA-Z]+$)", ":", tag.get("xlink:to"))
+                    dict_pre["pre_from"] = tag.get("xlink:from")
+                    dict_pre["pre_to"] = tag.get("xlink:to")
                     dict_pre["pre_arcrole"] = tag.get("xlink:arcrole")
                     dict_pre["pre_order"] = tag.get("order")
                     list_pre.append(dict_pre)
@@ -289,9 +275,3 @@ class FinanceStatement:
                 df = DataFrame(list_pre)
         return df
 
-
-# main = FinanceStatement("D://ZIP/20221026/081220221024548300.zip")
-# print(main.get_info())
-# print(main.get_documents())
-# dfs = main.get_dataframes()
-# print(dfs)
