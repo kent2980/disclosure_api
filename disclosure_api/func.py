@@ -17,8 +17,10 @@ class NotZipFileException(Exception):
 
 
 class NoneDocumentCodeException(Exception):
+    def __init__(self, documents:dict):
+        self.documents = documents
     def __str__(self) -> str:
-        return "書類コードを指定してください。 書類コードは \"get_document\"メソッドから問い合わせてください。\n"
+        return f"{documents}から検索対象の書類を選択してください。"
 
 
 class FinanceStatement:
@@ -120,7 +122,7 @@ class FinanceStatement:
 
         # 引数が未設定の場合例外を投げる
         if document_code is None:
-            raise NoneDocumentCodeException()
+            raise NoneDocumentCodeException(self.get_documents())
 
         # ローカルラベルを参照
         for (file, data) in self.file_datas.items():
