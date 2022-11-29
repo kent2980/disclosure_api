@@ -5,7 +5,7 @@ import time
 import requests
 import os
 from tqdm import tqdm
-from util._function import date_range
+from disclosure_api.util._function import date_range
 
 class OutputPathIsNoneException(Exception):
     """出力先パスが"None"の際に設定する例外

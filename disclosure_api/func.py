@@ -3,9 +3,9 @@ import zipfile
 from collections import OrderedDict
 import traceback
 import os
-from xbrl.summary import Summary
-from xbrl.attachment import Attachment
-from const.const import Const
+from disclosure_api.xbrl.summary import Summary
+from disclosure_api.xbrl.attachment import Attachment
+from disclosure_api.const.const import STATEMENT
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
@@ -80,9 +80,9 @@ class FinanceStatement:
                 file_name = str(file)[str(file).find("tse"):].split("-")
                 infos["id"] = file_name[3]
                 infos["code"] = file_name[2][:4]
-                infos["term"] = Const.STATEMENT["term"][file_name[1][-8]]
-                infos["consolidated"] = Const.STATEMENT["consolidated"][file_name[1][-7]]
-                infos["report"] = Const.STATEMENT["report"][file_name[1][-6:-2]]
+                infos["term"] = STATEMENT["term"][file_name[1][-8]]
+                infos["consolidated"] = STATEMENT["consolidated"][file_name[1][-7]]
+                infos["report"] = STATEMENT["report"][file_name[1][-6:-2]]
         return infos
 
     def get_documents(self) -> dict:
@@ -96,17 +96,17 @@ class FinanceStatement:
             if re.compile("^.*/Attachment/.*-ixbrl.htm$").match(file) is not None:
                 m = re.search("[0-9]{7}", file).start()
                 file_name = str(file)[m:].split("-")
-                files[file_name[1]] = Const.STATEMENT["split"][file_name[1]]
+                files[file_name[1]] = STATEMENT["split"][file_name[1]]
             elif re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
                 file_ = os.path.basename(file)
                 file_name = str(file_).split("-")
                 files[file_name[1][-6:-2]
-                      ] = Const.STATEMENT["report"][file_name[1][-6:-2]]
+                      ] = STATEMENT["report"][file_name[1][-6:-2]]
             elif re.compile("^.*-ixbrl.htm$").match(file) is not None:
                 file_ = os.path.basename(file)
                 file_name = str(file_).split("-")
                 files[file_name[1]
-                      ] = Const.STATEMENT["report"][file_name[1]]
+                      ] = STATEMENT["report"][file_name[1]]
         return files
 
     def __get_AttachmentDF(self, document_key: str = None) -> DataFrame:
