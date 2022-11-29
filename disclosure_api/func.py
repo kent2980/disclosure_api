@@ -10,13 +10,12 @@ from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
 
-
-class NotZipFileException(Exception):
+class __NotZipFileException(Exception):
     def __str__(self) -> str:
         return "ZIPファイルのパスを設定してください。"
 
 
-class NoneDocumentCodeException(Exception):
+class __NoneDocumentCodeException(Exception):
     def __init__(self, documents: dict):
         self.documents = documents
 
@@ -37,7 +36,7 @@ class FinanceStatement:
         """
         _, ext = os.path.splitext((xbrl_zip_path))
         if ext != ".zip":
-            raise NotZipFileException()
+            raise __NotZipFileException()
 
         self.xbrl_zip_path = xbrl_zip_path
         self.file_datas = self.__zip_open()
@@ -132,7 +131,7 @@ class FinanceStatement:
 
         # 引数が未設定の場合例外を投げる
         if document_key is None:
-            raise NoneDocumentCodeException(self.get_documents())
+            raise __NoneDocumentCodeException(self.get_documents())
 
         # ローカルラベルを参照
         for (file, data) in self.file_datas.items():
@@ -171,7 +170,7 @@ class FinanceStatement:
         
         # 引数が未設定の場合例外を投げる
         if document_key is None:
-            raise NoneDocumentCodeException(self.get_documents())
+            raise __NoneDocumentCodeException(self.get_documents())
         
         df = None
         
@@ -191,7 +190,7 @@ class FinanceStatement:
                         data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
                     df = summary.get_labeled_df()
         if df is None:
-            raise NoneDocumentCodeException(self.get_documents())
+            raise __NoneDocumentCodeException(self.get_documents())
         else:
             return df
 
