@@ -3,9 +3,9 @@ import zipfile
 from collections import OrderedDict
 import traceback
 import os
-from const.const import Const
 from xbrl.summary import Summary
 from xbrl.attachment import Attachment
+from const.const import Const
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
