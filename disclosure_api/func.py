@@ -23,7 +23,7 @@ class __NoneDocumentCodeException(Exception):
         return f"{self.documents} から検索対象の書類キーを選択してください。"
 
 
-class FinanceConst.STATEMENT:
+class FinanceStatement:
 
     def __init__(self, xbrl_zip_path: str) -> None:
         """TDNETから取得したXBRLの読み込み機能を提供します。
