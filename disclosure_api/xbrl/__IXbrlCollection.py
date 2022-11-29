@@ -80,7 +80,7 @@ class ITdnetCollection(IXbrlCollection):
             dict_fs['format'] = each_item.get('format')
             dict_fs['decimals'] = each_item.get('decimals')
             dict_fs['scale'] = each_item.get('scale')
-            dict_fs['unitRef'] = each_item.get('unitRef')
+            dict_fs['unitref'] = each_item.get('unitref')
             # マイナス表記の場合の処理＋円単位への変更
             if each_item.get('sign') == '-' and each_item.get('xsi:nil') != 'true':
                 try:

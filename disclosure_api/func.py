@@ -159,11 +159,11 @@ class FinanceStatement:
 
                     # 各リンクファイルを結合
                     df = pd.merge(df, self.__cal_xml(
-                    ), left_on="temp_label", right_on="cal_to", how="left")
+                    ), left_on="xlink_label", right_on="cal_to", how="left")
                     df = pd.merge(df, self.__def_xml(
-                    ), left_on="temp_label", right_on="def_to", how="inner")
+                    ), left_on="xlink_label", right_on="def_to", how="inner")
                     df = pd.merge(df, self.__pre_xml(
-                    ), left_on="temp_label", right_on="pre_to", how="left")
+                    ), left_on="xlink_label", right_on="pre_to", how="left")
 
         return df
 
@@ -220,10 +220,8 @@ class FinanceStatement:
                 # dictを作成し、リストに追加する
                 for tag in definitionTag:
                     dict_def = {}
-                    dict_def["def_type"] = tag.get("xlink:type")
                     dict_def["def_from"] = tag.get("xlink:from")
                     dict_def["def_to"] = tag.get("xlink:to")
-                    dict_def["def_arcrole"] = tag.get("xlink:arcrole")
                     dict_def["def_order"] = tag.get("order")
                     list_def.append(dict_def)
 
@@ -250,10 +248,8 @@ class FinanceStatement:
                 for tag in cal_tag:
                     try:
                         dict_cal = {}
-                        dict_cal["cal_type"] = tag.get("xlink:type")
                         dict_cal["cal_from"] = tag.get("xlink:from")
                         dict_cal["cal_to"] = tag.get("xlink:to")
-                        dict_cal["cal_arcrole"] = tag.get("xlink:arcrole")
                         dict_cal["cal_order"] = tag.get("order")
                         dict_cal["cal_weight"] = tag.get("weight")
                         list_cal.append(dict_cal)
@@ -282,10 +278,8 @@ class FinanceStatement:
                 # dictを作成し、リストに追加する
                 for tag in pre_tag:
                     dict_pre = {}
-                    dict_pre["pre_type"] = tag.get("xlink:type")
                     dict_pre["pre_from"] = tag.get("xlink:from")
                     dict_pre["pre_to"] = tag.get("xlink:to")
-                    dict_pre["pre_arcrole"] = tag.get("xlink:arcrole")
                     dict_pre["pre_order"] = tag.get("order")
                     list_pre.append(dict_pre)
 

@@ -142,6 +142,3 @@ class TdnetRequest:
             raise DateIsNoneException()
         for dte in date_range(start, end):
             self.getXBRL_link(dte)
-
-fff = TdnetRequest("D://ZIP")
-fff.getXBRL_link_daterange(date(2022,11,20), date.today())
