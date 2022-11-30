@@ -9,7 +9,6 @@ from disclosure_api.const.const import STATEMENT
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
-import pathlib
 
 class __NotZipFileException(Exception):
     def __str__(self) -> str:
@@ -161,14 +160,13 @@ class FinanceStatement:
                     attachment = Attachment(
                         data, taxonomy_path, local_taxonomy_data)
                     df = attachment.get_labeled_df()
-
                     # 各リンクファイルを結合
                     df = pd.merge(df, self.__cal_xml(
-                    ), left_on="xlink_label", right_on="cal_to", how="left")
+                    ), left_on="label_for_join", right_on="cal_to", how="left")
                     df = pd.merge(df, self.__def_xml(
-                    ), left_on="xlink_label", right_on="def_to", how="inner")
+                    ), left_on="label_for_join", right_on="def_to", how="left")
                     df = pd.merge(df, self.__pre_xml(
-                    ), left_on="xlink_label", right_on="pre_to", how="left")
+                    ), left_on="label_for_join", right_on="pre_to", how="left")
 
         return df
 
@@ -295,6 +293,3 @@ class FinanceStatement:
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
         return df
-
-path = f"{pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent}/doc/"
-print(f"ﾊﾟｽ:{path}")

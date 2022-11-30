@@ -52,9 +52,9 @@ class Summary(ITdnetCollection):
         # ラベルの結合
         df_labeled_fs = pd.merge(arg_fs, df_label_merged, left_on='temp_label', right_on='xlink_label', how='left').drop_duplicates()
         # temp_label,account_item列を削除
-        df_labeled_fs = df_labeled_fs.drop(["temp_label", "account_item"], axis=1)
+        df_labeled_fs = df_labeled_fs.drop(["temp_label"], axis=1)
         # 列の並び替え
-        df_labeled_fs = df_labeled_fs[["xlink_label", "contextRef", "label", "format", "decimals", "scale", "unitref", "amount"]]
+        df_labeled_fs = df_labeled_fs[["account_item", "xlink_label", "contextRef", "label", "format", "decimals", "scale", "unitref", "amount"]]
 
         
         return df_labeled_fs

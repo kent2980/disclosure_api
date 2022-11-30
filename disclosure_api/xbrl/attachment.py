@@ -61,13 +61,12 @@ class Attachment(ITdnetCollection):
         
         # 標準ラベルの読み込み
         df_label_global = pd.read_table(self.taxonomy_labels, sep='\t', encoding='utf-8')
-        # 標準ラベルの処理
         
         # 標準ラベルデータのうち、必要行に絞る
         df_label_global = df_label_global[df_label_global['xlink_role'] == 'http://www.xbrl.org/2003/role/label']
         
         # 必要列のみに絞る
-        df_label_global = df_label_global[['xlink_label', 'label']]
+        df_label_global = df_label_global[['xlink_label', 'label', 'label_for_join']]
         
         # 'label_'はじまりを削除で統一
         df_label_global['xlink_label'] = df_label_global['xlink_label'].str.replace('label_', '')
@@ -85,20 +84,22 @@ class Attachment(ITdnetCollection):
             # ラベルの末尾に'_label.*'があり、FSと結合できないため、これを削除
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('_label.*$', '').copy()
             
-            # ラベルの最初に'jpcrp'で始まるラベルがあり、削除で統一。
+            # label_for_joinラベルを定義
+            df_label_local['label_for_join'] = df_label_local['xlink_label']
             
             # 削除で統一した結果、各社で定義していた汎用的な科目名（「貸借対照表計上額」など）が重複するようになる。後続処理で重複削除。
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('[a-z]{5}_cor_', '')
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('[a-z]{3}-[a-z]{8}-[0-9]{5}_', '')
             
-            # ラベルの最初に'label_'で始まるラベルがあり、削除で統一
-            
             # 削除で統一した結果、各社で定義していた汎用的な科目名（「貸借対照表計上額」など）が重複するようになる。後続処理で重複削除。
             df_label_local['xlink_label'] = df_label_local['xlink_label'].str.replace('label_', '')
             
+            # 必要列のみに絞る
+            df_label_local = df_label_local[['xlink_label', 'label', 'label_for_join']]
+            
             # 同一要素名で異なる表示名が存在する場合、独ラベルを優先
-            df_label_local['temp'] = 1
-
+            df_label_local['temp'] = 1            
+            
             # label_globalとlabel_localを縦結合
             df_label_merged = pd.concat([df_label_global, df_label_local])
         else:
@@ -121,10 +122,10 @@ class Attachment(ITdnetCollection):
         # ラベルの結合
         df_labeled_fs = pd.merge(arg_fs, df_label_merged, left_on='temp_label', right_on='xlink_label', how='left').drop_duplicates()
         # temp_label,account_item列を削除
-        df_labeled_fs = df_labeled_fs.drop(["temp_label", "account_item"], axis=1)
+        df_labeled_fs = df_labeled_fs.drop(["temp_label"], axis=1)
         # 列の並び替え
-        df_labeled_fs = df_labeled_fs[["xlink_label", "contextRef", "label", "format", "decimals", "scale", "unitref", "amount"]]
-
+        df_labeled_fs = df_labeled_fs[["account_item", "xlink_label", "label_for_join", "contextRef", "label", "format", "decimals", "scale", "unitref", "amount"]]
+        
         return df_labeled_fs
 
     def __get_label_local(self, arg_data) -> DataFrame:
