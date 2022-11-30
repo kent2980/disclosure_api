@@ -9,6 +9,7 @@ from disclosure_api.const.const import STATEMENT
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
+import pathlib
 
 class __NotZipFileException(Exception):
     def __str__(self) -> str:
@@ -40,6 +41,7 @@ class FinanceStatement:
 
         self.xbrl_zip_path = xbrl_zip_path
         self.file_datas = self.__zip_open()
+        self.taxonomy_dir = f"{pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent}/doc/taxonomy_tsv/"
 
     def __zip_open(self) -> OrderedDict:
         """Zip圧縮ファイルからファイルを取り出します。
@@ -129,6 +131,10 @@ class FinanceStatement:
         df = None
         local_taxonomy_data = None
 
+        # タクソノミの参照パス
+        taxonomy_file_name = "attachment_taxonomy.tsv"
+        taxonomy_path = os.path.join(self.taxonomy_dir, taxonomy_file_name)
+        
         # 引数が未設定の場合例外を投げる
         if document_key is None:
             raise __NoneDocumentCodeException(self.get_documents())
@@ -153,7 +159,7 @@ class FinanceStatement:
 
                     # DataFrameに変換
                     attachment = Attachment(
-                        data, "../doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy_data)
+                        data, taxonomy_path, local_taxonomy_data)
                     df = attachment.get_labeled_df()
 
                     # 各リンクファイルを結合
@@ -167,6 +173,10 @@ class FinanceStatement:
         return df
 
     def __get_SummaryInfo(self, document_key:str=None) -> DataFrame:
+        
+        # タクソノミの参照パス
+        taxonomy_file_name = "summary_taxonomy.tsv"
+        taxonomy_path = os.path.join(self.taxonomy_dir, taxonomy_file_name)
         
         # 引数が未設定の場合例外を投げる
         if document_key is None:
@@ -182,12 +192,12 @@ class FinanceStatement:
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
                 if file_name[1][-6:-2] == document_key:
                     summary = Summary(
-                        data, "../doc/taxonomy_tsv/summary_taxonomy.tsv")
+                        data, taxonomy_path)
                     df = summary.get_labeled_df()
             elif re.compile("^.*-ixbrl.htm$").match(file) is not None:
                 if file_name[1] == document_key:
                     summary = Summary(
-                        data, "../doc/taxonomy_tsv/summary_taxonomy.tsv")
+                        data, taxonomy_path)
                     df = summary.get_labeled_df()
         if df is None:
             raise __NoneDocumentCodeException(self.get_documents())
@@ -285,3 +295,6 @@ class FinanceStatement:
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
         return df
+
+path = f"{pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent}/doc/"
+print(f"ﾊﾟｽ:{path}")
