@@ -10,12 +10,20 @@ import warnings
 class CreateTaxonomy:
     """タクソノミTSVファイルを生成するクラス
     """
-    def __init__(self, input_path:str="./doc/taxonomy_raw/", output_path:str="./doc/taxonomy_tsv/") -> None:
+    def __init__(self, input_path:str=None, output_path:str=None) -> None:
         # 警告を非表示
         warnings.simplefilter("ignore")
+        
         # 入力元・出力先フォルダのパスを初期化
-        self.input_path = input_path
-        self.output_path = output_path
+        if input_path is None:
+            self.input_path = f"{os.path.abspath(os.path.dirname(__file__))}/doc/taxonomy_raw/"
+        else:
+            self.input_path = input_path
+        if output_path is None:
+            self.output_path = f"{os.path.abspath(os.path.dirname(__file__))}/doc/taxonomy_tsv/"
+        else:
+            self.output_path = output_path
+        
         # 出力先フォルダを初期化
         if os.path.isdir(output_path) == True:
             shutil.rmtree(output_path)

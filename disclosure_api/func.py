@@ -41,7 +41,7 @@ class FinanceStatement:
 
         self.xbrl_zip_path = xbrl_zip_path
         self.file_datas = self.__zip_open()
-        self.taxonomy_dir = f"{pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent}/doc/taxonomy_tsv/"
+        self.taxonomy_dir = f"{os.path.abspath(os.path.dirname(__file__))}/doc/taxonomy_tsv/"
 
     def __zip_open(self) -> OrderedDict:
         """Zip圧縮ファイルからファイルを取り出します。
