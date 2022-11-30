@@ -153,7 +153,7 @@ class FinanceStatement:
 
                     # DataFrameに変換
                     attachment = Attachment(
-                        data, "doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy_data)
+                        data, "disclosure_api/doc/taxonomy_tsv/attachment_taxonomy.tsv", local_taxonomy_data)
                     df = attachment.get_labeled_df()
 
                     # 各リンクファイルを結合
@@ -182,12 +182,12 @@ class FinanceStatement:
             if re.compile("^.*/Summary/.*-ixbrl.htm$").match(file) is not None:
                 if file_name[1][-6:-2] == document_key:
                     summary = Summary(
-                        data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
+                        data, "disclosure_api/doc/taxonomy_tsv/summary_taxonomy.tsv")
                     df = summary.get_labeled_df()
             elif re.compile("^.*-ixbrl.htm$").match(file) is not None:
                 if file_name[1] == document_key:
                     summary = Summary(
-                        data, "doc/taxonomy_tsv/summary_taxonomy.tsv")
+                        data, "disclosure_api/doc/taxonomy_tsv/summary_taxonomy.tsv")
                     df = summary.get_labeled_df()
         if df is None:
             raise __NoneDocumentCodeException(self.get_documents())
