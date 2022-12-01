@@ -301,5 +301,3 @@ class FinanceStatement:
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
         return df
-
-print(parent_dir)
