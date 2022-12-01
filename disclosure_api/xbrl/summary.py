@@ -1,7 +1,7 @@
 import pandas as pd
 from bs4 import BeautifulSoup
 import warnings
-from disclosure_api.xbrl.__IXbrlCollection import ITdnetCollection
+from xbrl.__IXbrlCollection import ITdnetCollection
 
 class Summary(ITdnetCollection):
     
