@@ -3,14 +3,22 @@ import zipfile
 from collections import OrderedDict
 import traceback
 import os
-from disclosure_api.xbrl.summary import Summary
-from disclosure_api.xbrl.attachment import Attachment
-from disclosure_api.const.const import STATEMENT
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
+from os.path import dirname, abspath
+import sys
 
+# 絶対パスをsys.pathに登録する
+parent_dir = dirname(abspath(__file__))
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+from xbrl.summary import Summary
+from xbrl.attachment import Attachment
+from const.const import STATEMENT
 class __NotZipFileException(Exception):
+    
     def __str__(self) -> str:
         return "ZIPファイルのパスを設定してください。"
 
@@ -293,3 +301,5 @@ class FinanceStatement:
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
         return df
+
+print(parent_dir)

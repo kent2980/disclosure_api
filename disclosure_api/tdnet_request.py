@@ -5,7 +5,15 @@ import time
 import requests
 import os
 from tqdm import tqdm
-from disclosure_api.util._function import date_range
+from os.path import dirname, abspath
+import sys
+
+# 絶対パスをsys.pathに登録する
+parent_dir = dirname(abspath(__file__))
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+from util._function import date_range
 
 class OutputPathIsNoneException(Exception):
     """出力先パスが"None"の際に設定する例外

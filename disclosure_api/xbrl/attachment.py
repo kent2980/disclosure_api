@@ -2,8 +2,8 @@ import pandas as pd
 from pandas import DataFrame
 from bs4 import BeautifulSoup
 from os import path
-from disclosure_api.xbrl.__IXbrlCollection import ITdnetCollection
 import warnings
+from xbrl.__IXbrlCollection import ITdnetCollection
 
 class Attachment(ITdnetCollection):
     """TDNETより取得したXBRLデータのうち、
