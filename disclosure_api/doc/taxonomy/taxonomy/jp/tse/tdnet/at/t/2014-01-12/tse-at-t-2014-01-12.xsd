@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.xbrl.tdnet.info/taxonomy/jp/tse/tdnet/at/t/2014-01-12" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tse-at-t="http://www.xbrl.tdnet.info/taxonomy/jp/tse/tdnet/at/t/2014-01-12" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xl="http://www.xbrl.org/2003/XLink" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:iod="http://disclosure.edinet-fsa.go.jp/taxonomy/common/2013-08-31/iod">
+  <import namespace="http://www.xbrl.org/2003/instance" schemaLocation="http://www.xbrl.org/2003/xbrl-instance-2003-12-31.xsd"/>
+  <import namespace="http://disclosure.edinet-fsa.go.jp/taxonomy/common/2013-08-31/iod" schemaLocation="http://disclosure.edinet-fsa.go.jp/taxonomy/common/2013-08-31/identificationAndOrdering_2013-08-31.xsd"/>
+  <element name="AttachedDocumentHeading" id="tse-at-t_AttachedDocumentHeading" type="xbrli:stringItemType" substitutionGroup="iod:identifierItem" abstract="true" nillable="true" xbrli:periodType="duration"/>
+</schema>

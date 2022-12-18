@@ -170,11 +170,11 @@ class FinanceStatement:
                     df = attachment.get_labeled_df()
                     # 各リンクファイルを結合
                     df = pd.merge(df, self.__cal_xml(
-                    ), left_on="label_for_join", right_on="cal_to", how="left")
+                    ), left_on="xlink_label", right_on="cal_to", how="left")
                     df = pd.merge(df, self.__def_xml(
-                    ), left_on="label_for_join", right_on="def_to", how="left")
+                    ), left_on="xlink_label", right_on="def_to", how="left")
                     df = pd.merge(df, self.__pre_xml(
-                    ), left_on="label_for_join", right_on="pre_to", how="left")
+                    ), left_on="xlink_label", right_on="pre_to", how="left")
 
         return df
 
@@ -242,6 +242,8 @@ class FinanceStatement:
 
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_def)
+                # 末尾ラベルを削除
+                df["def_to"] = df["def_to"].str.replace("_.*$","")
         return df
 
     def __cal_xml(self) -> DataFrame:
@@ -273,6 +275,8 @@ class FinanceStatement:
 
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_cal)
+                # 末尾ラベルを削除
+                df["cal_to"] = df["cal_to"].str.replace("_.*$","")
         return df
 
     def __pre_xml(self) -> DataFrame:
@@ -300,4 +304,15 @@ class FinanceStatement:
 
                 # dictを格納したリストをDataFrameに変換
                 df = DataFrame(list_pre)
+                # 末尾ラベルを削除
+                df["pre_to"] = df["pre_to"].str.replace("_.*$","")
         return df
+
+list = os.listdir("D:/ZIP")
+path = "D:/ZIP/20221130/081220221130572907.zip"
+fi = FinanceStatement(path)
+doc = fi.get_documents()
+for (key, value) in doc.items():
+    print(key)
+    df = fi.get_dataframe(key)
+    df.to_csv(f"{key}.csv")
