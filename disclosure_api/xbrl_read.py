@@ -11,8 +11,6 @@ from pathlib import Path
 import os
 import requests
 from datetime import datetime
-import csv
-import mojimoji
 
 class MyException(Exception):
     
@@ -103,9 +101,6 @@ class XbrlRead:
                     
                     list = []
                     soup = bs(zip_data.read(info.filename), 'lxml')
-                    
-                    # nonnumericタグを抽出                    
-                    nonnumeric_tag = soup.find('ix:nonnumeric')
                     
                     # nonfractionタグを抽出
                     nonfraction_tag = soup.findAll('ix:nonfraction')
