@@ -437,7 +437,7 @@ class XbrlRead:
 
                         # 提出日
                         if tag_dict['reporting_date'] is None:
-                            date_str = str(self.xbrl_zip_path).split("\\")[2]
+                            date_str = re.compile("[0-9]{8}").search(str(self.xbrl_zip_path)).group()
                             tag_dict['reporting_date'] = datetime.strptime(
                                 date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
