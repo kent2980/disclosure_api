@@ -49,6 +49,42 @@ class NoneXbrlZipPathSetting(Exception):
 
 class XbrlRead:
     """TDNETより配信されたXBRLの読み込み機能を提供します。
+
+    XBRLのZIPファイルのパスを設定してください。
+
+    Args:
+        xbrl_zip_path (str, optional): ZIP(XBRL) ファイルパス
+
+    Raises:
+        NoneXbrlZipPathSetting: パス未設定エラー
+        
+    Examples:
+    
+        初期化：TDNETからダウンロードしたZIPファイルのパスを読み込んでください。
+        
+        >>> zip_path = " ***/***/********.zip"
+            x = XbrlRead(zip_path)
+            
+        (a) XBRLのDataFrameを出力
+        
+        >>> xbrl_df = x.to_dataframe()
+        
+        (b) XBRLの勘定科目ラベル付きDataFrameを出力
+        
+        >>> xbrl_df = x.add_label_df()
+        
+        (c) XBRLの計算リンクを出力 -> DataFrame
+        
+        >>> cal_df = x.to_cal_link_df()
+        
+        (d) XBRLの定義リンクを出力 -> DataFrame
+        
+        >>> def_df = x.to_def_link_df()
+        
+        (e) XBRLの表示リンクを出力 -> DataFrame
+        
+        >>> pre_df = x.to_pre_link_df()
+        
     """
 
     def __init__(self, xbrl_zip_path: str = None) -> None:
