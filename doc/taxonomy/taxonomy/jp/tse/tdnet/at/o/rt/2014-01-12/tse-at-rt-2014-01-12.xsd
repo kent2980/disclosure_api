@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.xbrl.tdnet.info/taxonomy/jp/tse/tdnet/at/o/rt/2014-01-12" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tse-at-rt="http://www.xbrl.tdnet.info/taxonomy/jp/tse/tdnet/at/o/rt/2014-01-12" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xbrli="http://www.xbrl.org/2003/instance">
+  <annotation>
+    <appinfo>
+      <link:roleType roleURI="http://www.xbrl.tdnet.info/jp/tse/tdnet/role/RoleAttachedDocument" id="RoleAttachedDocument">
+        <link:definition>Attached Document</link:definition>
+        <link:usedOn>link:presentationLink</link:usedOn>
+      </link:roleType>
+    </appinfo>
+  </annotation>
+</schema>
