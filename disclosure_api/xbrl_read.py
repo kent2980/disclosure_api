@@ -128,7 +128,7 @@ class XbrlRead:
         """
 
         # ZIPファイルのパスが未設定の場合に例外発生
-        if xbrl_zip_path is None or re.compile("^.*zip$").match(xbrl_zip_path):
+        if xbrl_zip_path is None:
             raise NoneXbrlZipPathSetting()
 
         # 警告を非表示
