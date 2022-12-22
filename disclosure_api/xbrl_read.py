@@ -11,6 +11,7 @@ import os
 import requests
 from datetime import datetime
 import pymysql.cursors
+import json
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
@@ -470,7 +471,7 @@ class XbrlRead:
             return tag_dict
 
         # 辞書のキーを定義する
-        dict_columns = ['reporting_date', 'code', 'period', 'text_block', 'financial_statement', 'period_division', 'consolidation_cat',
+        dict_columns = ['reporting_date', 'code', 'period', 'doc_element', 'doc_label', 'financial_statement', 'period_division', 'consolidation_cat',
                         'report_cat', 'report_detail_cat', 'start_date', 'end_date', 'instant_date',
                         'namespace', 'element', 'context', 'unitref', 'format', 'numeric']
 
@@ -510,13 +511,6 @@ class XbrlRead:
 
                     # nonfractionタグを抽出
                     nonfraction_tag = soup.findAll('ix:nonfraction')
-                    
-                    # TextBlockを抽出
-                    text_block = None
-                    if re.compile("Attachment").search(info.filename):
-                        text_block = soup.find('ix:nonnumeric', attrs={'name': re.compile("^.*TextBlock$")}).get('name')
-                        text_block = re.compile("[a-zA-Z0-9]+$").search(text_block).group()
-                        text_block = re.sub("TextBlock", "", text_block)
 
                     # nonfractionタグの各要素を取得
                     for tag in nonfraction_tag:
@@ -553,9 +547,8 @@ class XbrlRead:
                             dict_tag['period'] = company_datas['period']
 
                             # *********************************************************
-                            # 書類情報を登録********************************************
+                            # 財表識別区分を登録*****************************************
                             # *********************************************************
-                            dict_tag['text_block'] = text_block
                             
                             file_code = str(info.filename).split("/")
                             file_code = file_code[len(file_code)-1].split("-")
@@ -575,6 +568,22 @@ class XbrlRead:
                                     "c|n").match(report_cat[1]) else None
                                 dict_tag['report_cat'] = report_cat[2:6]
                                 dict_tag['report_detail_cat'] = report_cat[6:8]
+                                
+                            # *********************************************************
+                            # 書類要素名、書類ラベルを登録 *******************************
+                            # *********************************************************
+                            
+                            # JSONファイルを読み込む
+                            with open(f"{os.path.dirname(__file__)}\\const\\const.json", mode='r', encoding='utf-8') as const_file:
+                                const_dict = json.load(const_file)
+                                
+                                # 報告書と財務諸表で処理分岐
+                                if dict_tag['financial_statement'] is not None:                                    
+                                    dict_tag['doc_element'] = const_dict['document_element'][dict_tag['financial_statement']]
+                                    dict_tag['doc_label'] = const_dict['document_name'][dict_tag['financial_statement']]
+                                
+                                elif dict_tag['report_cat'] is not None:                                
+                                    dict_tag['doc_label'] = const_dict['report'][dict_tag['report_cat']]    
 
                             # **********************************************************
                             # 各項目を登録***********************************************
@@ -877,9 +886,9 @@ if __name__ == "__main__":
     # データベース接続**********************************************
     # ************************************************************
     connection = pymysql.connect(host='localhost',
-                                user='****',
-                                password='******',
-                                database='*****',
+                                user='root',
+                                password='kent6839',
+                                database='Stock',
                                 cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
@@ -913,3 +922,4 @@ if __name__ == "__main__":
                 cursor.executemany(pre_sql, play.to_pre_link_df().values.tolist())
                 cursor.executemany(def_sql, play.to_def_link_df().values.tolist())
                 connection.commit()
+    
