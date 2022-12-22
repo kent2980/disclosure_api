@@ -624,8 +624,8 @@ class XbrlRead:
 
                     # タグを登録
                     for link in cal_links:
-                        text_block = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
-                        text_block = re.sub("rol_|Role", "", text_block)
+                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:calculationarc')
                         
                         for tag in tags:
@@ -634,7 +634,7 @@ class XbrlRead:
                             tag_dict = {}
 
                             # 要素を登録
-                            tag_dict['text_block'] = text_block
+                            tag_dict['doc_element'] = doc_element
                             l_com = "[A-Za-z0-9]+$"
                             tag_dict['from_label'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
@@ -655,7 +655,7 @@ class XbrlRead:
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
                 group = pd.merge(group, tag_df, how='inner',
-                                    left_on=['element','text_block'], right_on=['to_label','text_block'])
+                                    left_on=['element','doc_element'], right_on=['to_label','doc_element'])
                 add_df = pd.concat([add_df, group], axis=0)
                 
         # Dataframeを並び替え
@@ -669,7 +669,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
         
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'text_block', 'namespace', 'element', 'from_label', 'order', 'weight']]
+        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order', 'weight']]
         
         return add_df
 
@@ -710,8 +710,8 @@ class XbrlRead:
 
                     # タグを登録
                     for link in def_links:
-                        text_block = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
-                        text_block = re.sub("rol_|Role", "", text_block)
+                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:definitionarc')
                     # タグを登録
                         for tag in tags:
@@ -720,7 +720,7 @@ class XbrlRead:
                             tag_dict = {}
 
                             # 要素を登録
-                            tag_dict['text_block'] = text_block
+                            tag_dict['doc_element'] = doc_element
                             l_com = "[A-Za-z0-9]+$"
                             tag_dict['from_label'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
@@ -740,7 +740,7 @@ class XbrlRead:
                             if name == 'fr':
                                 tag_df = DataFrame(fr_tag_list)
                                 group = pd.merge(group, tag_df, how='inner',
-                                                left_on=['element','text_block'], right_on=['to_label','text_block'])
+                                                left_on=['element','doc_element'], right_on=['to_label','doc_element'])
                                 add_df = pd.concat([add_df, group], axis=0)
 
         # Dataframeを並び替え
@@ -754,7 +754,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
         
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'text_block', 'namespace', 'element', 'from_label', 'order']]
+        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
         
         return add_df
 
@@ -795,8 +795,8 @@ class XbrlRead:
 
                     # タグを登録
                     for link in pre_links:
-                        text_block = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
-                        text_block = re.sub("rol_|Role", "", text_block)
+                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:presentationarc')
 
                         # タグを登録
@@ -806,7 +806,7 @@ class XbrlRead:
                             tag_dict = {}
 
                             # 要素を登録
-                            tag_dict['text_block'] = text_block
+                            tag_dict['doc_element'] = doc_element
                             l_com = "[A-Za-z0-9]+$"
                             tag_dict['from_label'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
@@ -826,7 +826,7 @@ class XbrlRead:
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
                 group = pd.merge(group, tag_df, how='inner',
-                                    left_on=['element','text_block'], right_on=['to_label','text_block'])
+                                    left_on=['element','doc_element'], right_on=['to_label','doc_element'])
                 add_df = pd.concat([add_df, group], axis=0)
 
         # Dataframeを並び替え
@@ -840,7 +840,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
         
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'text_block', 'namespace', 'element', 'from_label', 'order']]
+        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
         
         return add_df
 
@@ -859,7 +859,7 @@ if __name__ == "__main__":
         with connection.cursor() as cursor:
             # レコードを挿入
             sql = 'INSERT IGNORE INTO xbrl_order \
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
             cal_sql = 'INSERT IGNORE INTO xbrl_cal_link \
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s)'
             pre_sql = 'INSERT IGNORE INTO xbrl_pre_link \
