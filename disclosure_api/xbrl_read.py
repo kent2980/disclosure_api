@@ -574,7 +574,7 @@ class XbrlRead:
                             # *********************************************************
                             
                             # JSONファイルを読み込む
-                            with open(f"{os.path.dirname(__file__)}\\const\\const.json", mode='r', encoding='utf-8') as const_file:
+                            with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
                                 const_dict = json.load(const_file)
                                 
                                 # 報告書と財務諸表で処理分岐
