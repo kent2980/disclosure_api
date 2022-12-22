@@ -12,6 +12,7 @@ import requests
 from datetime import datetime
 import pymysql.cursors
 import json
+from tqdm import tqdm
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
@@ -46,6 +47,14 @@ class NoneXbrlZipPathSetting(Exception):
     
     def __str__(self) -> str:
         return "ZIPファイルのパスを指定してください。"
+
+class LinkListEmptyException(MyException):
+    
+    def __init__(self, arg: str = "") -> None:
+        super().__init__(arg)
+        
+    def __str__(self) -> str:
+        return f"リンクファイルが読み込めませんでした。\n[{self.arg}]"
 
 
 class XbrlRead:
@@ -634,6 +643,7 @@ class XbrlRead:
         
         # 空のリスト
         tag_list = []
+        name_list = []
 
         # データ構造のみコピー
         add_df = df[:0]
@@ -690,9 +700,13 @@ class XbrlRead:
         # 計算リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
+                # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
                                     left_on=['element','doc_element'], right_on=['to_label','doc_element'])
-                add_df = pd.concat([add_df, group], axis=0)
+                # マスタフレームに追加
+                add_df = pd.concat([add_df, group], axis=0)              
+                # [report_detail_cat] の値をリストに追加
+                name_list.append(name)
                 
         # Dataframeを並び替え
         add_df = add_df.sort_values(
@@ -706,6 +720,13 @@ class XbrlRead:
         
         # 列を抽出する
         add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order', 'weight']]
+        
+        # リストが空の場合は例外処理
+        try:
+            if len(add_df) == 0 and 'fr' in name_list:
+                raise LinkListEmptyException(self.xbrl_zip_path)
+        except LinkListEmptyException as identifier:
+            print(identifier)
         
         return add_df
 
@@ -722,6 +743,7 @@ class XbrlRead:
         # 空のリスト
         sm_tag_list = []
         fr_tag_list = []
+        name_list = []
 
         # データ構造のみコピー
         add_df = df[:0]
@@ -775,9 +797,13 @@ class XbrlRead:
                         for name, group in df.groupby(by='report_detail_cat'):
                             if name == 'fr':
                                 tag_df = DataFrame(fr_tag_list)
+                                # XBRLとリンクファイルを内部結合
                                 group = pd.merge(group, tag_df, how='inner',
                                                 left_on=['element','doc_element'], right_on=['to_label','doc_element'])
-                                add_df = pd.concat([add_df, group], axis=0)
+                                # マスタフレームに追加
+                                add_df = pd.concat([add_df, group], axis=0)              
+                                # [report_detail_cat] の値をリストに追加
+                                name_list.append(name)
 
         # Dataframeを並び替え
         add_df = add_df.sort_values(
@@ -791,6 +817,13 @@ class XbrlRead:
         
         # 列を抽出する
         add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
+        
+        # リストが空の場合は例外処理
+        try:
+            if len(add_df) == 0 and 'fr' in name_list:
+                raise LinkListEmptyException(self.xbrl_zip_path)
+        except LinkListEmptyException as identifier:
+            print(identifier)
         
         return add_df
 
@@ -806,6 +839,7 @@ class XbrlRead:
         
         # 空のリスト
         tag_list = []
+        name_list = []
 
         # データ構造のみコピー
         add_df = df[:0]
@@ -849,7 +883,7 @@ class XbrlRead:
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
                             tag_dict['order'] = tag.get('order')
-
+                            
                             # リストに追加
                             tag_list.append(tag_dict)
 
@@ -861,13 +895,17 @@ class XbrlRead:
         # 表示リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
+                # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
                                     left_on=['element','doc_element'], right_on=['to_label','doc_element'])
-                add_df = pd.concat([add_df, group], axis=0)
-
+                # マスタフレームに追加
+                add_df = pd.concat([add_df, group], axis=0)                
+                # [report_detail_cat] の値をリストに追加
+                name_list.append(name)
+                
         # Dataframeを並び替え
         add_df = add_df.sort_values(
-            by=['report_detail_cat', 'financial_statement'], ascending=[False, True])
+            by=['report_detail_cat', 'financial_statement'], ascending=[False, True])        
         
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
@@ -877,6 +915,13 @@ class XbrlRead:
         
         # 列を抽出する
         add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
+        
+        # リストが空の場合は例外処理
+        try:
+            if len(add_df) == 0 and 'fr' in name_list:
+                raise LinkListEmptyException(self.xbrl_zip_path)
+        except LinkListEmptyException as identifier:
+            print(identifier)
         
         return add_df
 
@@ -909,9 +954,16 @@ if __name__ == "__main__":
 
             zip_path = Path("D:/ZIP/")
             zip_list = list(zip_path.glob("**/*.zip"))
+            
+            # ダウンロードメッセージ
+            print("*********************************************************")
+            print("XBRLからデータベースへのインポートを開始します。 ********")
+            print("*********************************************************")
+            
+            # プログレスバーを設置
+            bar = tqdm(total=len(zip_list))
+            
             for zip_file in zip_list:
-
-                print(zip_file)
 
                 play = XbrlRead(zip_file)
                 df = play.add_label_df()
@@ -922,4 +974,11 @@ if __name__ == "__main__":
                 cursor.executemany(pre_sql, play.to_pre_link_df().values.tolist())
                 cursor.executemany(def_sql, play.to_def_link_df().values.tolist())
                 connection.commit()
+                
+                bar.update(1)
+                
+            # 終了メッセージ
+            print("*********************************************************")
+            print(f"{len(zip_list)}件のデータをインポートしました。 *******")
+            print("*********************************************************")
     
