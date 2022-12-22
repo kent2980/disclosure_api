@@ -82,7 +82,7 @@ class TdnetRequest:
             if "f" in locals():
                 f.close()
         
-    def getXBRL_link(self, dte:date=None) -> int:
+    def getXBRL_link(self, dte:date=None) -> list:
         """TDNETからXBRLをダウンロードします。
 
         Args:
@@ -92,16 +92,28 @@ class TdnetRequest:
             DateIsNoneException: 日付未設定エラー
 
         Returns:
-            int: 保存件数
+            list: ファイルの保存パスリスト
         """
+        
+        # 日付が未設定の場合、例外が発生
         if date is None:
             raise DateIsNoneException()
+        
+        # ファイルの保存パスリスト
+        file_list = []
+        
+        # 保存フォルダ
         saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
+        
+        # ファイルの存在可否フラグ
         flag = True
+        
         # ページ番号
         p = 0
+        
         # 件数
         n = 0
+        
         while flag == True:
             p += 1
             url =f'https://www.release.tdnet.info/inbs/I_list_{p:03}_{dte.strftime("%Y%m%d")}.html'
@@ -123,8 +135,16 @@ class TdnetRequest:
                         if not os.path.exists(saveDir):
                             os.makedirs(saveDir)
                         if not self.__isfile(file_, saveDir):
+                            
+                            # ダウンロードリンクを生成
                             xbrl_link = f'https://www.release.tdnet.info/inbs/{file_}'
-                            urllib.request.urlretrieve(xbrl_link, f'{saveDir}/{file_}')
+                            # ローカルの保存パス
+                            local_file_path = f'{saveDir}/{file_}'
+                            # ローカルにダウンロード
+                            urllib.request.urlretrieve(xbrl_link, local_file_path)
+                            # 保存パスをリストに追加
+                            file_list.append(local_file_path)
+                            
                         bar.update(1)
                         time.sleep(0.1)
                         n += 1
@@ -134,7 +154,8 @@ class TdnetRequest:
             print(f"{dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
         else:
             print(f"\n{n}件の適時開示情報をダウンロードしました。\n")
-        return n
+        
+        return file_list
     
     def getXBRL_link_daterange(self, start:date=None, end:date=None):
         """TDNETから対象期間に公表されたXBRLをダウンロードします。
