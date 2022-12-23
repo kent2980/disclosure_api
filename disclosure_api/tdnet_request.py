@@ -99,8 +99,11 @@ class TdnetRequest:
         if date is None:
             raise DateIsNoneException()
         
-        # ファイルの保存パスリスト
+        # ファイルのリンクパスリスト
         file_list = []
+        
+        # 保存ファイルのリスト
+        save_f_list = []
         
         # 保存フォルダ
         saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
@@ -157,29 +160,32 @@ class TdnetRequest:
             # ファイルのダウンロード処理 *****************
             # ******************************************
             
-            for file_ in file_list:
+            for file_name in file_list:
                 
                 # ファイルのダウンロード中カウント遷移
-                bar.set_description(f'{n}/{len(file_list)} 処理中')
+                bar.set_description(f'{n}/{len(file_list)} 件 処理中・・・')
                 
                 # 保存先フォルダが存在しない場合は新規作成する
                 if not os.path.exists(saveDir):
                     os.makedirs(saveDir)
                     
                 # ローカルにファイルが存在しない場合ファイルをダウンロード
-                if not self.__isfile(file_, saveDir):
+                if not self.__isfile(file_name, saveDir):
                     
                     # ダウンロードリンクを生成
-                    xbrl_link = f'https://www.release.tdnet.info/inbs/{file_}'
+                    xbrl_link = f'https://www.release.tdnet.info/inbs/{file_name}'
                     
                     # ローカルの保存パス
-                    local_file_path = f'{saveDir}/{file_}'
+                    local_file_path = f'{saveDir}/{file_name}'
                     
                     # ローカルにダウンロード
                     urllib.request.urlretrieve(xbrl_link, local_file_path)
                     
                     # 新規ダウンロードカウンタのアップデート
                     new_count += 1
+                    
+                    # 保存したファイルをリストに追加
+                    save_f_list.append(file_name)
                 
                 # プログレスバーの表示をアップデート
                 bar.update(1)
@@ -194,7 +200,7 @@ class TdnetRequest:
             bar.close()           
 
             # ファイルダウンロード完了後のメッセージ
-            print(f"\n{len(new_count)}件の適時開示情報を新規ダウンロードしました。")
+            print(f"\n{new_count}件の適時開示情報を新規ダウンロードしました。")
             print(f"本日発表された適時開示情報は{len(file_list)}件です。\n")
             
         # ファイルリストが空の場合
@@ -203,7 +209,7 @@ class TdnetRequest:
             print("*********************************************************\n")
             print(f"{dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
         
-        return file_list
+        return save_f_list
     
     def getXBRL_link_daterange(self, start:date=None, end:date=None):
         """TDNETから対象期間に公表されたXBRLをダウンロードします。
