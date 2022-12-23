@@ -13,6 +13,7 @@ from datetime import datetime
 import pymysql.cursors
 import json
 from tqdm import tqdm
+from datetime import date, timedelta
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
@@ -952,33 +953,50 @@ if __name__ == "__main__":
             # データ取得***************************************************
             # ************************************************************
 
-            zip_path = Path("D:/ZIP/")
-            zip_list = list(zip_path.glob("**/*.zip"))
+            start_date = date(2022,12,22)
             
-            # ダウンロードメッセージ
-            print("*********************************************************")
-            print("XBRLからデータベースへのインポートを開始します。 ********")
-            print("*********************************************************")
+            end_date = date.today()
             
-            # プログレスバーを設置
-            bar = tqdm(total=len(zip_list))
+            while start_date <= end_date:                
             
-            for zip_file in zip_list:
+                zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
+                zip_list = list(zip_path.glob("**/*.zip"))
+                
+                if len(zip_list) > 0:
+                
+                    # ダウンロードメッセージ
+                    print("\n************************************************************************************")
+                    print(f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
+                    print("************************************************************************************\n")
+                                        # プログレスバーを設置
+                    bar = tqdm(total=len(zip_list))
+                    
+                    for zip_file in zip_list:
 
-                play = XbrlRead(zip_file)
-                df = play.add_label_df()
-                file_name = os.path.splitext(os.path.basename(zip_file))[0]
-                df.to_csv(f'D:/CSV/label/{file_name}.csv')
-                cursor.executemany(sql,df.values.tolist())
-                cursor.executemany(cal_sql, play.to_cal_link_df().values.tolist())
-                cursor.executemany(pre_sql, play.to_pre_link_df().values.tolist())
-                cursor.executemany(def_sql, play.to_def_link_df().values.tolist())
-                connection.commit()
+                        play = XbrlRead(zip_file)
+                        df = play.add_label_df()
+                        file_name = os.path.splitext(os.path.basename(zip_file))[0]
+                        df.to_csv(f'D:/CSV/label/{file_name}.csv')
+                        cursor.executemany(sql,df.values.tolist())
+                        cursor.executemany(cal_sql, play.to_cal_link_df().values.tolist())
+                        cursor.executemany(pre_sql, play.to_pre_link_df().values.tolist())
+                        cursor.executemany(def_sql, play.to_def_link_df().values.tolist())
+                        connection.commit()
+                        
+                        bar.update(1)
+                        
+                    bar.close()
+                        
+                    # 終了メッセージ
+                    print(f"\n     {len(zip_list)}件のデータをインポートしました。")
+                    
+                else:
+                    
+                    # メッセージ
+                    print("\n************************************************************************************")
+                    print(f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
+                    print("************************************************************************************\n")                    
                 
-                bar.update(1)
-                
-            # 終了メッセージ
-            print("*********************************************************")
-            print(f"{len(zip_list)}件のデータをインポートしました。 *******")
-            print("*********************************************************")
+                start_date += timedelta(days=1)
+
     

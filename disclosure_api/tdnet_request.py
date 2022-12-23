@@ -1,6 +1,6 @@
 import urllib.request, urllib.error
 from bs4 import BeautifulSoup
-from datetime import date
+from datetime import date,timedelta
 import time
 import requests
 import os
@@ -108,6 +108,10 @@ class TdnetRequest:
         # 保存フォルダ
         saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
         
+        # 保存先フォルダが存在しない場合は新規作成する
+        if not os.path.exists(saveDir):
+            os.makedirs(saveDir)
+        
         # ページの存在可否フラグ
         flag = True
         
@@ -116,9 +120,6 @@ class TdnetRequest:
         
         # ファイルリストカウント
         n = 1
-        
-        # 新規ダウンロードカウンタ
-        new_count = 0
         
         # Trueの間は処理を繰り返す
         while flag == True:
@@ -153,25 +154,27 @@ class TdnetRequest:
             print(f"     {dte.strftime('%Y年%m月%d日')}公表分をダウンロード...")
             print("*********************************************************\n")
             
-            # ダウンロード一覧のプログレスバーを生成
-            bar = tqdm(total=len(file_list))
-            
-            # ******************************************
-            # ファイルのダウンロード処理 *****************
-            # ******************************************
-            
+            # 新規のファイルリストを作成
             for file_name in file_list:
-                
-                # ファイルのダウンロード中カウント遷移
-                bar.set_description(f'  {n}/{len(file_list)} 件 処理中・・・')
-                
-                # 保存先フォルダが存在しない場合は新規作成する
-                if not os.path.exists(saveDir):
-                    os.makedirs(saveDir)
-                    
-                # ローカルにファイルが存在しない場合ファイルをダウンロード
+                # ファイルの存在可否を問い合わせ
                 if not self.__isfile(file_name, saveDir):
+                    # 新規ファイル名をリストに追加
+                    save_f_list.append(file_name)
+            
+            if len(save_f_list) > 0:
+
+                # ******************************************
+                # ファイルのダウンロード処理 *****************
+                # ******************************************
+
+                # ダウンロード一覧のプログレスバーを生成
+                bar = tqdm(total=len(save_f_list))            
+
+                for file_name in save_f_list:
                     
+                    # ファイルのダウンロード中カウント遷移
+                    bar.set_description(f'  {n}/{len(save_f_list)} 件 ダウンロード中...')
+                        
                     # ダウンロードリンクを生成
                     xbrl_link = f'https://www.release.tdnet.info/inbs/{file_name}'
                     
@@ -181,31 +184,26 @@ class TdnetRequest:
                     # ローカルにダウンロード
                     urllib.request.urlretrieve(xbrl_link, local_file_path)
                     
-                    # 新規ダウンロードカウンタのアップデート
-                    new_count += 1
-                    
-                    # 保存したファイルをリストに追加
-                    save_f_list.append(file_name)
-                    
                     # 1秒待機
                     time.sleep(0.1)
+                    
+                    # プログレスバーの表示をアップデート
+                    bar.update(1)
+                    
+                    # リストのファイル数をカウント
+                    n += 1
                 
-                # プログレスバーの表示をアップデート
-                bar.update(1)
-                
-                # リストのファイル数をカウント
-                n += 1
-            
-            # プログレスバーの処理をクローズ
-            bar.close()           
+                # プログレスバーの処理をクローズ
+                bar.close()           
 
-            # ファイルダウンロード完了後のメッセージ
-            if len(save_f_list) > 0:
-                print(f"\n     適時開示情報を{new_count}件 新規ダウンロードしました。")
+                # ファイルダウンロード完了後のメッセージ
+                print(f"\n     適時開示情報を{len(save_f_list)}件 新規ダウンロードしました。")
             else:
                 print(f"\n     適時開示情報の新規ダウンロードはありません。")
-            print(f"     本日発表された適時開示情報は{len(file_list)}件です。\n")
             
+            # 新規ダウンロードの可否に関わらない共通メッセージ
+            print(f"     {dte.strftime('%Y年%m月%d日')}に発表された適時開示情報は{len(file_list)}件です。\n")
+                
         # ファイルリストが空の場合
         else:            
             # メッセージ
@@ -228,3 +226,17 @@ class TdnetRequest:
             raise DateIsNoneException()
         for dte in date_range(start, end):
             self.getXBRL_link(dte)
+
+if __name__ == "__main__":
+    
+    start_dte = date(2022,12,10)
+    
+    end_dte = date.today()
+    
+    while start_dte <= end_dte:
+        
+        out_path = "D:/ZIP/"
+        tdnet = TdnetRequest(out_path)
+        tdnet.getXBRL_link((start_dte))
+        
+        start_dte += timedelta(days=1)
