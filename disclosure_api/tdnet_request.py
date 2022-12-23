@@ -105,55 +105,88 @@ class TdnetRequest:
         # 保存フォルダ
         saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
         
-        # ファイルの存在可否フラグ
+        # ページの存在可否フラグ
         flag = True
         
         # ページ番号
         p = 0
         
-        # 件数
-        n = 0
-        
+        # Trueの間は処理を繰り返す
         while flag == True:
+            
+            # ページ番号をカウントアップ
             p += 1
+            
+            # 指定された日付のTDNET:URLを生成する
             url =f'https://www.release.tdnet.info/inbs/I_list_{p:03}_{dte.strftime("%Y%m%d")}.html'
+            
+            # 有効なURLか判定する
             flag = self.__link_check(url)
+            
+            # 有効なURLだった場合
             if flag == True:
                 
+                # URLからHTMLを読み込む
                 url_txt = requests.get(url).text
+                
+                # HTMLをスクレイピング
                 soup = BeautifulSoup(url_txt, 'html.parser')
-                file_list = []
+                
+                # ファイル名をリストに追加
                 for el in soup.find_all('div', class_='xbrl-mask'):
                     file_list.append(el.a["href"])
-                if len(file_list) > 0:
-                    if p == 1:
-                        print("*********************************************************")
-                        print(f"{dte.strftime('%Y年%m月%d日')}公表分をダウンロード...\n")
-                    bar = tqdm(total=len(file_list))
-                    bar.set_description(f'{p} page reading')
-                    for file_ in file_list:
-                        if not os.path.exists(saveDir):
-                            os.makedirs(saveDir)
-                        if not self.__isfile(file_, saveDir):
-                            
-                            # ダウンロードリンクを生成
-                            xbrl_link = f'https://www.release.tdnet.info/inbs/{file_}'
-                            # ローカルの保存パス
-                            local_file_path = f'{saveDir}/{file_}'
-                            # ローカルにダウンロード
-                            urllib.request.urlretrieve(xbrl_link, local_file_path)
-                            # 保存パスをリストに追加
-                            file_list.append(local_file_path)
-                            
-                        bar.update(1)
-                        time.sleep(0.1)
-                        n += 1
-                    bar.close()           
-        if n == 0:
+                
+        # ファイル名がリストに存在する場合
+        if len(file_list) > 0:
+            
+            # 1ページ目の場合はダウンロード開始のメッセージを表示
+            if p == 1:
+                print("*********************************************************")
+                print(f"{dte.strftime('%Y年%m月%d日')}公表分をダウンロード...\n")
+            
+            # ダウンロード一覧のプログレスバーを生成
+            bar = tqdm(total=len(file_list))
+            bar.set_description(f'{p} page reading')
+            
+            # ******************************************
+            # ファイルのダウンロード処理 *****************
+            # ******************************************
+            
+            for file_ in file_list:
+                
+                # 保存先フォルダが存在しない場合は新規作成する
+                if not os.path.exists(saveDir):
+                    os.makedirs(saveDir)
+                    
+                # ローカルにファイルが存在しない場合ファイルをダウンロード
+                if not self.__isfile(file_, saveDir):
+                    
+                    # ダウンロードリンクを生成
+                    xbrl_link = f'https://www.release.tdnet.info/inbs/{file_}'
+                    
+                    # ローカルの保存パス
+                    local_file_path = f'{saveDir}/{file_}'
+                    
+                    # ローカルにダウンロード
+                    urllib.request.urlretrieve(xbrl_link, local_file_path)
+                
+                # プログレスバーの表示をアップデート
+                bar.update(1)
+                
+                # 1秒待機
+                time.sleep(0.1)
+            
+            # プログレスバーの処理をクローズ
+            bar.close()           
+
+            # ファイルダウンロード完了後のメッセージ
+            print(f"\n{len(file_list)}件の適時開示情報をダウンロードしました。\n")
+            
+        # ファイルリストが空の場合
+        else:            
+            # メッセージ
             print("*********************************************************\n")
             print(f"{dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
-        else:
-            print(f"\n{n}件の適時開示情報をダウンロードしました。\n")
         
         return file_list
     
