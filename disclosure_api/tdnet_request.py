@@ -111,6 +111,12 @@ class TdnetRequest:
         # ページ番号
         p = 0
         
+        # ファイルリストカウント
+        n = 1
+        
+        # 新規ダウンロードカウンタ
+        new_count = 0
+        
         # Trueの間は処理を繰り返す
         while flag == True:
             
@@ -146,13 +152,15 @@ class TdnetRequest:
             
             # ダウンロード一覧のプログレスバーを生成
             bar = tqdm(total=len(file_list))
-            bar.set_description(f'{p} page reading')
             
             # ******************************************
             # ファイルのダウンロード処理 *****************
             # ******************************************
             
             for file_ in file_list:
+                
+                # ファイルのダウンロード中カウント遷移
+                bar.set_description(f'{n}/{len(file_list)} 処理中')
                 
                 # 保存先フォルダが存在しない場合は新規作成する
                 if not os.path.exists(saveDir):
@@ -169,18 +177,25 @@ class TdnetRequest:
                     
                     # ローカルにダウンロード
                     urllib.request.urlretrieve(xbrl_link, local_file_path)
+                    
+                    # 新規ダウンロードカウンタのアップデート
+                    new_count += 1
                 
                 # プログレスバーの表示をアップデート
                 bar.update(1)
                 
                 # 1秒待機
                 time.sleep(0.1)
+                
+                # リストのファイル数をカウント
+                n += 1
             
             # プログレスバーの処理をクローズ
             bar.close()           
 
             # ファイルダウンロード完了後のメッセージ
-            print(f"\n{len(file_list)}件の適時開示情報をダウンロードしました。\n")
+            print(f"\n{len(new_count)}件の適時開示情報を新規ダウンロードしました。")
+            print(f"本日発表された適時開示情報は{len(file_list)}件です。\n")
             
         # ファイルリストが空の場合
         else:            
