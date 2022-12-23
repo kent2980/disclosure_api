@@ -203,7 +203,7 @@ class TdnetRequest:
             if len(save_f_list) > 0:
                 print(f"\n     適時開示情報を{new_count}件 新規ダウンロードしました。")
             else:
-                print(f"\n     適時開示情報を新規ダウンロードはありません。")
+                print(f"\n     適時開示情報の新規ダウンロードはありません。")
             print(f"     本日発表された適時開示情報は{len(file_list)}件です。\n")
             
         # ファイルリストが空の場合
