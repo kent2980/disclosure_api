@@ -186,12 +186,12 @@ class TdnetRequest:
                     
                     # 保存したファイルをリストに追加
                     save_f_list.append(file_name)
+                    
+                    # 1秒待機
+                    time.sleep(0.1)
                 
                 # プログレスバーの表示をアップデート
                 bar.update(1)
-                
-                # 1秒待機
-                time.sleep(0.1)
                 
                 # リストのファイル数をカウント
                 n += 1
