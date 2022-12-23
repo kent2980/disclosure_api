@@ -148,10 +148,10 @@ class TdnetRequest:
         # ファイル名がリストに存在する場合
         if len(file_list) > 0:
             
-            # 1ページ目の場合はダウンロード開始のメッセージを表示
-            if p == 1:
-                print("*********************************************************")
-                print(f"{dte.strftime('%Y年%m月%d日')}公表分をダウンロード...\n")
+            # ダウンロード開始のメッセージを表示
+            print("*********************************************************")
+            print(f"     {dte.strftime('%Y年%m月%d日')}公表分をダウンロード...")
+            print("*********************************************************\n")
             
             # ダウンロード一覧のプログレスバーを生成
             bar = tqdm(total=len(file_list))
@@ -163,7 +163,7 @@ class TdnetRequest:
             for file_name in file_list:
                 
                 # ファイルのダウンロード中カウント遷移
-                bar.set_description(f'{n}/{len(file_list)} 件 処理中・・・')
+                bar.set_description(f'  {n}/{len(file_list)} 件 処理中・・・')
                 
                 # 保存先フォルダが存在しない場合は新規作成する
                 if not os.path.exists(saveDir):
@@ -200,14 +200,14 @@ class TdnetRequest:
             bar.close()           
 
             # ファイルダウンロード完了後のメッセージ
-            print(f"\n{new_count}件の適時開示情報を新規ダウンロードしました。")
-            print(f"本日発表された適時開示情報は{len(file_list)}件です。\n")
+            print(f"\n     {new_count}件の適時開示情報を新規ダウンロードしました。")
+            print(f"     本日発表された適時開示情報は{len(file_list)}件です。\n")
             
         # ファイルリストが空の場合
         else:            
             # メッセージ
             print("*********************************************************\n")
-            print(f"{dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
+            print(f"     {dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
         
         return save_f_list
     
