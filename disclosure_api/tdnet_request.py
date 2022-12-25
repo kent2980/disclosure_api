@@ -168,33 +168,30 @@ class TdnetRequest:
                 # ******************************************
 
                 # ダウンロード一覧のプログレスバーを生成
-                bar = tqdm(total=len(save_f_list))            
+                with tqdm(total=len(save_f_list)) as bar:
 
-                for file_name in save_f_list:
-                    
-                    # ファイルのダウンロード中カウント遷移
-                    bar.set_description(f'  {n}/{len(save_f_list)} 件 ダウンロード中...')
+                    for file_name in save_f_list:
                         
-                    # ダウンロードリンクを生成
-                    xbrl_link = f'https://www.release.tdnet.info/inbs/{file_name}'
-                    
-                    # ローカルの保存パス
-                    local_file_path = f'{saveDir}/{file_name}'
-                    
-                    # ローカルにダウンロード
-                    urllib.request.urlretrieve(xbrl_link, local_file_path)
-                    
-                    # 1秒待機
-                    time.sleep(0.1)
-                    
-                    # プログレスバーの表示をアップデート
-                    bar.update(1)
-                    
-                    # リストのファイル数をカウント
-                    n += 1
-                
-                # プログレスバーの処理をクローズ
-                bar.close()           
+                        # ファイルのダウンロード中カウント遷移
+                        bar.set_description(f'  {n}/{len(save_f_list)} 件 ダウンロード中...')
+                            
+                        # ダウンロードリンクを生成
+                        xbrl_link = f'https://www.release.tdnet.info/inbs/{file_name}'
+                        
+                        # ローカルの保存パス
+                        local_file_path = f'{saveDir}/{file_name}'
+                        
+                        # ローカルにダウンロード
+                        urllib.request.urlretrieve(xbrl_link, local_file_path)
+                        
+                        # 1秒待機
+                        time.sleep(0.1)
+                        
+                        # プログレスバーの表示をアップデート
+                        bar.update(1)
+                        
+                        # リストのファイル数をカウント
+                        n += 1          
 
                 # ファイルダウンロード完了後のメッセージ
                 print(f"\n     適時開示情報を{len(save_f_list)}件 新規ダウンロードしました。")

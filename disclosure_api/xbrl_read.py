@@ -997,27 +997,25 @@ if __name__ == "__main__":
                     print(
                         "************************************************************************************\n")
                     # プログレスバーを設置
-                    bar = tqdm(total=len(zip_list))
+                    with tqdm(total=len(zip_list)) as bar:
 
-                    for zip_file in zip_list:
+                        for zip_file in zip_list:
 
-                        play = XbrlRead(zip_file)
-                        df = play.add_label_df()
-                        file_name = os.path.splitext(
-                            os.path.basename(zip_file))[0]
-                        df.to_csv(f'D:/CSV/label/{file_name}.csv')
-                        cursor.executemany(sql, df.values.tolist())
-                        cursor.executemany(
-                            cal_sql, play.to_cal_link_df().values.tolist())
-                        cursor.executemany(
-                            pre_sql, play.to_pre_link_df().values.tolist())
-                        cursor.executemany(
-                            def_sql, play.to_def_link_df().values.tolist())
-                        connection.commit()
+                            play = XbrlRead(zip_file)
+                            df = play.add_label_df()
+                            file_name = os.path.splitext(
+                                os.path.basename(zip_file))[0]
+                            df.to_csv(f'D:/CSV/label/{file_name}.csv')
+                            cursor.executemany(sql, df.values.tolist())
+                            cursor.executemany(
+                                cal_sql, play.to_cal_link_df().values.tolist())
+                            cursor.executemany(
+                                pre_sql, play.to_pre_link_df().values.tolist())
+                            cursor.executemany(
+                                def_sql, play.to_def_link_df().values.tolist())
+                            connection.commit()
 
-                        bar.update(1)
-
-                    bar.close()
+                            bar.update(1)
 
                     # 終了メッセージ
                     print(f"\n     {len(zip_list)}件のデータをインポートしました。")
