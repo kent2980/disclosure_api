@@ -15,6 +15,7 @@ import json
 from tqdm import tqdm
 from datetime import date, timedelta
 
+
 class MyException(Exception):
     """自作例外クラスの基底クラス
 
@@ -39,21 +40,23 @@ class XbrlValueNoneException(MyException):
     def __str__(self) -> str:
         return f"XBRLタグ [{self.arg}] の値が存在しません。"
 
+
 class NoneXbrlZipPathSetting(Exception):
     """ZIPファイルのパスが未設定の場合に発生する例外
 
     Args:
         Exception (_type_): 例外基底クラス
     """
-    
+
     def __str__(self) -> str:
         return "ZIPファイルのパスを指定してください。"
 
+
 class LinkListEmptyException(MyException):
-    
+
     def __init__(self, arg: str = "") -> None:
         super().__init__(arg)
-        
+
     def __str__(self) -> str:
         return f"リンクファイルが読み込めませんでした。\n[{self.arg}]"
 
@@ -68,34 +71,34 @@ class XbrlRead:
 
     Raises:
         NoneXbrlZipPathSetting: パス未設定エラー
-        
+
     Examples:
-    
+
         初期化：TDNETからダウンロードしたZIPファイルのパスを読み込んでください。
-        
+
         >>> zip_path = " ***/***/********.zip"
             x = XbrlRead(zip_path)
-            
+
         (a) XBRLのDataFrameを出力
-        
+
         >>> xbrl_df = x.to_dataframe()
-        
+
         (b) XBRLの勘定科目ラベル付きDataFrameを出力
-        
+
         >>> xbrl_df = x.add_label_df()
-        
+
         (c) XBRLの計算リンクを出力 -> DataFrame
-        
+
         >>> cal_df = x.to_cal_link_df()
-        
+
         (d) XBRLの定義リンクを出力 -> DataFrame
-        
+
         >>> def_df = x.to_def_link_df()
-        
+
         (e) XBRLの表示リンクを出力 -> DataFrame
-        
+
         >>> pre_df = x.to_pre_link_df()
-        
+
     """
 
     def __init__(self, xbrl_zip_path: str = None) -> None:
@@ -108,34 +111,34 @@ class XbrlRead:
 
         Raises:
             NoneXbrlZipPathSetting: パス未設定エラー
-            
+
         Examples:
-        
+
             初期化：TDNETからダウンロードしたZIPファイルのパスを読み込んでください。
-            
+
             >>> zip_path = " ***/***/********.zip"
                 x = XbrlRead(zip_path)
-                
+
             (a) XBRLのDataFrameを出力
-            
+
             >>> xbrl_df = x.to_dataframe()
-            
+
             (b) XBRLの勘定科目ラベル付きDataFrameを出力
-            
+
             >>> xbrl_df = x.add_label_df()
-            
+
             (c) XBRLの計算リンクを出力 -> DataFrame
-            
+
             >>> cal_df = x.to_cal_link_df()
-            
+
             (d) XBRLの定義リンクを出力 -> DataFrame
-            
+
             >>> def_df = x.to_def_link_df()
-            
+
             (e) XBRLの表示リンクを出力 -> DataFrame
-            
+
             >>> pre_df = x.to_pre_link_df()
-            
+
         """
 
         # ZIPファイルのパスが未設定の場合に例外発生
@@ -372,7 +375,7 @@ class XbrlRead:
 
         # 勘定ラベルを付与
         master_df = add_label_link(xbrl_df, global_label_xml)
-        
+
         # 重複業を削除
         master_df = master_df.drop_duplicates()
 
@@ -448,7 +451,8 @@ class XbrlRead:
 
                         # 提出日
                         if tag_dict['reporting_date'] is None:
-                            date_str = re.compile("[0-9]{8}").search(str(self.xbrl_zip_path)).group()
+                            date_str = re.compile(
+                                "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
                             tag_dict['reporting_date'] = datetime.strptime(
                                 date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
@@ -559,7 +563,7 @@ class XbrlRead:
                             # *********************************************************
                             # 財表識別区分を登録*****************************************
                             # *********************************************************
-                            
+
                             file_code = str(info.filename).split("/")
                             file_code = file_code[len(file_code)-1].split("-")
                             # 財務諸表と報告書で処理を分岐
@@ -578,22 +582,22 @@ class XbrlRead:
                                     "c|n").match(report_cat[1]) else None
                                 dict_tag['report_cat'] = report_cat[2:6]
                                 dict_tag['report_detail_cat'] = report_cat[6:8]
-                                
+
                             # *********************************************************
                             # 書類要素名、書類ラベルを登録 *******************************
                             # *********************************************************
-                            
+
                             # JSONファイルを読み込む
                             with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
                                 const_dict = json.load(const_file)
-                                
+
                                 # 報告書と財務諸表で処理分岐
-                                if dict_tag['financial_statement'] is not None:                                    
+                                if dict_tag['financial_statement'] is not None:
                                     dict_tag['doc_element'] = const_dict['document_element'][dict_tag['financial_statement']]
                                     dict_tag['doc_label'] = const_dict['document_name'][dict_tag['financial_statement']]
-                                
-                                elif dict_tag['report_cat'] is not None:                                
-                                    dict_tag['doc_label'] = const_dict['report'][dict_tag['report_cat']]    
+
+                                elif dict_tag['report_cat'] is not None:
+                                    dict_tag['doc_label'] = const_dict['report'][dict_tag['report_cat']]
 
                             # **********************************************************
                             # 各項目を登録***********************************************
@@ -638,10 +642,10 @@ class XbrlRead:
         Returns:
             DataFrame: 計算リンク
         """
-        
+
         # XBRLを読み込む
         df = self.xbrl_df
-        
+
         # 空のリスト
         tag_list = []
         name_list = []
@@ -671,10 +675,11 @@ class XbrlRead:
 
                     # タグを登録
                     for link in cal_links:
-                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.compile(
+                            "rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
                         doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:calculationarc')
-                        
+
                         for tag in tags:
 
                             # 空の辞書
@@ -703,32 +708,33 @@ class XbrlRead:
             if name == 'fr':
                 # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
-                                    left_on=['element','doc_element'], right_on=['to_label','doc_element'])
+                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
                 # マスタフレームに追加
-                add_df = pd.concat([add_df, group], axis=0)              
+                add_df = pd.concat([add_df, group], axis=0)
                 # [report_detail_cat] の値をリストに追加
                 name_list.append(name)
-                
+
         # Dataframeを並び替え
         add_df = add_df.sort_values(
             by=['report_detail_cat', 'financial_statement'], ascending=[False, True])
-        
+
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
-        
+
         # 重複する行を削除
         add_df = add_df.drop_duplicates()
-        
+
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order', 'weight']]
-        
+        add_df = add_df[['reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order', 'weight']]
+
         # リストが空の場合は例外処理
         try:
             if len(add_df) == 0 and 'fr' in name_list:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-        
+
         return add_df
 
     def to_def_link_df(self) -> DataFrame:
@@ -737,10 +743,10 @@ class XbrlRead:
         Returns:
             DataFrame: 定義リンク
         """
-        
+
         # XBRLを読み込む
         df = self.xbrl_df
-        
+
         # 空のリスト
         sm_tag_list = []
         fr_tag_list = []
@@ -760,16 +766,17 @@ class XbrlRead:
             for info in file_list:
                 # 計算リンクファイルを抽出
                 if re.compile(".*def.xml").search(info.filename):
-                    
+
                     # 対象ファイル(XML)をスクレイピング
                     soup = bs(zip_data.read(info.filename), 'lxml')
-                    
+
                     # <link:definitionLink> タグを抽出
                     def_links = soup.find_all(name='link:definitionlink')
 
                     # タグを登録
                     for link in def_links:
-                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.compile(
+                            "rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
                         doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:definitionarc')
                     # タグを登録
@@ -786,7 +793,7 @@ class XbrlRead:
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
                             tag_dict['order'] = tag.get('order')
-                            
+
                             # リストに追加
                             if re.compile("Summary").search(info.filename):
                                 sm_tag_list.append(tag_dict)
@@ -800,32 +807,33 @@ class XbrlRead:
                                 tag_df = DataFrame(fr_tag_list)
                                 # XBRLとリンクファイルを内部結合
                                 group = pd.merge(group, tag_df, how='inner',
-                                                left_on=['element','doc_element'], right_on=['to_label','doc_element'])
+                                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
                                 # マスタフレームに追加
-                                add_df = pd.concat([add_df, group], axis=0)              
+                                add_df = pd.concat([add_df, group], axis=0)
                                 # [report_detail_cat] の値をリストに追加
                                 name_list.append(name)
 
         # Dataframeを並び替え
         add_df = add_df.sort_values(
             by=['report_detail_cat', 'financial_statement'], ascending=[False, True])
-        
+
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
-        
+
         # 重複業を削除
         add_df = add_df.drop_duplicates()
-        
+
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
-        
+        add_df = add_df[['reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order']]
+
         # リストが空の場合は例外処理
         try:
             if len(add_df) == 0 and 'fr' in name_list:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-        
+
         return add_df
 
     def to_pre_link_df(self) -> DataFrame:
@@ -837,7 +845,7 @@ class XbrlRead:
 
         # XBRLを読み込む
         df = self.xbrl_df
-        
+
         # 空のリスト
         tag_list = []
         name_list = []
@@ -857,7 +865,7 @@ class XbrlRead:
             for info in file_list:
                 # 計算リンクファイルを抽出
                 if re.compile(".*pre.xml").search(info.filename):
-                    
+
                     # 対象ファイル(XML)をスクレイピング
                     soup = bs(zip_data.read(info.filename), 'lxml')
 
@@ -866,7 +874,8 @@ class XbrlRead:
 
                     # タグを登録
                     for link in pre_links:
-                        doc_element = re.compile("rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
+                        doc_element = re.compile(
+                            "rol_[a-zA-Z0-9]+|Role[a-zA-Z0-9]").search(link.get('xlink:role')).group()
                         doc_element = re.sub("rol_|Role", "", doc_element)
                         tags = link.find_all('link:presentationarc')
 
@@ -884,7 +893,7 @@ class XbrlRead:
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
                             tag_dict['order'] = tag.get('order')
-                            
+
                             # リストに追加
                             tag_list.append(tag_dict)
 
@@ -898,105 +907,129 @@ class XbrlRead:
             if name == 'fr':
                 # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
-                                    left_on=['element','doc_element'], right_on=['to_label','doc_element'])
+                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
                 # マスタフレームに追加
-                add_df = pd.concat([add_df, group], axis=0)                
+                add_df = pd.concat([add_df, group], axis=0)
                 # [report_detail_cat] の値をリストに追加
                 name_list.append(name)
-                
+
         # Dataframeを並び替え
         add_df = add_df.sort_values(
-            by=['report_detail_cat', 'financial_statement'], ascending=[False, True])        
-        
+            by=['report_detail_cat', 'financial_statement'], ascending=[False, True])
+
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
-        
+
         # 重複行を削除
         add_df = add_df.drop_duplicates()
-        
+
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element', 'namespace', 'element', 'from_label', 'order']]
-        
+        add_df = add_df[['reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order']]
+
         # リストが空の場合は例外処理
         try:
             if len(add_df) == 0 and 'fr' in name_list:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-        
+
         return add_df
 
+
 if __name__ == "__main__":
-    
+
     # ************************************************************
     # データベース接続**********************************************
     # ************************************************************
     connection = pymysql.connect(host='localhost',
-                                user='root',
-                                password='kent6839',
-                                database='Stock',
-                                cursorclass=pymysql.cursors.DictCursor)
+                                 user='root',
+                                 password='kent6839',
+                                 database='Stock',
+                                 cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
         with connection.cursor() as cursor:
             # レコードを挿入
-            sql = 'INSERT IGNORE INTO xbrl_order \
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-            cal_sql = 'INSERT IGNORE INTO xbrl_cal_link \
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)'
-            pre_sql = 'INSERT IGNORE INTO xbrl_pre_link \
-                VALUES(%s,%s,%s,%s,%s,%s,%s)'
-            def_sql = 'INSERT IGNORE INTO xbrl_def_link \
-                VALUES(%s,%s,%s,%s,%s,%s,%s)'
+            sql = """
+            INSERT IGNORE INTO xbrl_order 
+                (`reporting_date` ,`code` ,`period` ,`doc_element` ,`doc_label` ,`financial_statement` , 
+                `period_division` ,`consolidation_cat` ,`report_cat` ,`report_detail_cat` ,`start_date` , 
+                `end_date` ,`instant_date` ,`namespace` ,`element` ,`context` ,`unitref` ,`format` ,`numeric` ,`label`) 
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            cal_sql = """
+            INSERT IGNORE INTO xbrl_cal_link 
+                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            pre_sql = """
+                INSERT IGNORE INTO xbrl_pre_link 
+                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                """
+            def_sql = """
+            INSERT IGNORE INTO xbrl_def_link 
+                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                """
 
             # ************************************************************
             # データ取得***************************************************
             # ************************************************************
 
-            start_date = date(2022,12,22)
-            
+            start_date = date(2022, 12, 22)
+
             end_date = date.today()
-            
-            while start_date <= end_date:                
-            
+
+            while start_date <= end_date:
+
                 zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
                 zip_list = list(zip_path.glob("**/*.zip"))
-                
+
                 if len(zip_list) > 0:
-                
+
                     # ダウンロードメッセージ
-                    print("\n************************************************************************************")
-                    print(f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
-                    print("************************************************************************************\n")
-                                        # プログレスバーを設置
+                    print(
+                        "\n************************************************************************************")
+                    print(
+                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
+                    print(
+                        "************************************************************************************\n")
+                    # プログレスバーを設置
                     bar = tqdm(total=len(zip_list))
-                    
+
                     for zip_file in zip_list:
 
                         play = XbrlRead(zip_file)
                         df = play.add_label_df()
-                        file_name = os.path.splitext(os.path.basename(zip_file))[0]
+                        file_name = os.path.splitext(
+                            os.path.basename(zip_file))[0]
                         df.to_csv(f'D:/CSV/label/{file_name}.csv')
-                        cursor.executemany(sql,df.values.tolist())
-                        cursor.executemany(cal_sql, play.to_cal_link_df().values.tolist())
-                        cursor.executemany(pre_sql, play.to_pre_link_df().values.tolist())
-                        cursor.executemany(def_sql, play.to_def_link_df().values.tolist())
+                        cursor.executemany(sql, df.values.tolist())
+                        cursor.executemany(
+                            cal_sql, play.to_cal_link_df().values.tolist())
+                        cursor.executemany(
+                            pre_sql, play.to_pre_link_df().values.tolist())
+                        cursor.executemany(
+                            def_sql, play.to_def_link_df().values.tolist())
                         connection.commit()
-                        
+
                         bar.update(1)
-                        
+
                     bar.close()
-                        
+
                     # 終了メッセージ
                     print(f"\n     {len(zip_list)}件のデータをインポートしました。")
-                    
-                else:
-                    
-                    # メッセージ
-                    print("\n************************************************************************************")
-                    print(f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
-                    print("************************************************************************************\n")                    
-                
-                start_date += timedelta(days=1)
 
-    
+                else:
+
+                    # メッセージ
+                    print(
+                        "\n************************************************************************************")
+                    print(
+                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
+                    print(
+                        "************************************************************************************\n")
+
+                start_date += timedelta(days=1)
