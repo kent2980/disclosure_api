@@ -193,7 +193,8 @@ class XbrlRead:
 
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
-            ['id', 'reporting_date', 'code', 'period','period_division','consolidation_cat','report_cat', 'report_label','name'], None)
+            ['id', 'reporting_date', 'code', 'period','period_division', 'period_division_label','consolidation_cat', 
+             'consolidation_cat_label','report_cat', 'report_label','name'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
@@ -231,7 +232,12 @@ class XbrlRead:
                     with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
                         const_dict = json.load(const_file)
                     
-                    tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]                    
+                    tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]   
+                    
+                    if tag_dict['period_division'] is not None:
+                        tag_dict['period_division_label'] = const_dict['term'][tag_dict['period_division']]
+                    if tag_dict['consolidation_cat'] is not None:
+                        tag_dict['consolidation_cat_label'] = const_dict['consolidated'][tag_dict['consolidation_cat']]                 
                     
                     # ***************************************************
                     # スクレイピング
@@ -1037,8 +1043,9 @@ if __name__ == "__main__":
                 """
             explain_sql = """
             INSERT IGNORE INTO xbrl_explain
-                (`id`, `reporting_date`, `code`, `period`, `period_division`, `consolidation_cat`, `report_cat`, `report_label`, `company_name`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
+                `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
             cal_sql = """
             INSERT IGNORE INTO xbrl_cal_link 
@@ -1060,7 +1067,7 @@ if __name__ == "__main__":
             # データ取得***************************************************
             # ************************************************************
 
-            start_date = date(2022, 12, 15)
+            start_date = date(2022, 12, 16)
 
             end_date = date.today()
 
