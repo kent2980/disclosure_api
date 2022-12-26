@@ -677,7 +677,7 @@ class XbrlRead:
 
                                 # 報告書と財務諸表で処理分岐
                                 if dict_tag['financial_statement'] == "summary":
-                                    dict_tag['doc_label'] = 'サマリー'
+                                    dict_tag['doc_label'] = '報告書サマリー'
                                     dict_tag['report_detail_cat'] = 'sm'
                                 else:
                                     dict_tag['doc_element'] = const_dict['document_element'][dict_tag['financial_statement']]
