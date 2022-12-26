@@ -147,9 +147,145 @@ class XbrlRead:
 
         # 警告を非表示
         warnings.simplefilter("ignore")
+
         # ZIPファイルのパスを設定
         self.xbrl_zip_path = xbrl_zip_path
+
+        # 報告日を取得
+        self.reporting_date = datetime.strptime(re.compile(
+            "[0-9]{8}").search(os.path.dirname(xbrl_zip_path).__str__()).group(), "%Y%m%d")
+
+        # 銘柄コードを取得
+        self.code = self.get_company_code()
+
+        # ID(zipファイル名)を取得
+        self.id = os.path.splitext(os.path.basename(xbrl_zip_path))[0]
+
+        # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
+
+    def get_company_code(self) -> str:
+        """銘柄コードを取得します。
+
+        Returns:
+            str: 銘柄コード
+        """
+
+        # ZIPを展開
+        with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_date:
+            for info in zip_date.infolist():
+                if re.compile("[0-9]{5}").search(info.filename):
+                    # 銘柄コードを取得
+                    code = re.compile(
+                        "[0-9]{5}").search(info.filename).group()[0:4]
+
+                    return code
+
+    def company_explain_df(self) -> DataFrame:
+        """会社の固有情報を出力します。
+
+        Returns:
+            dict: 会社固有情報
+        """
+        
+        # 空のリストを作成
+        tag_list = []
+
+        # 空の辞書を作成
+        tag_dict = dict.fromkeys(
+            ['id', 'reporting_date', 'code', 'period','period_division','consolidation_cat','report_cat', 'report_label','name'], None)
+
+        # Zipファイルを展開する
+        with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
+            # ファイルを展開する
+            for info in zip_data.infolist():
+                # 対象のファイルを抽出
+                if re.compile("tse-.*ixbrl.htm$|^.*Summary/.*ixbrl.htm$|^.*ixbrl.htm$").search(info.filename):
+                    
+                    # ***************************************************
+                    # ファイル名から取得
+                    # ***************************************************
+                    file_code = str(info.filename).split("/")
+                    file_code = file_code[len(file_code)-1].split("-")
+                    # 財務諸表と報告書で処理を分岐
+                    if re.compile("Attachment").search(info.filename):
+                        report_cat = file_code[3]
+                    else:
+                        report_cat = file_code[1]
+                        
+                    # 期区分、連結・非連結区分が省略されている場合は分岐処理
+                    if len(report_cat) == 4:
+                        tag_dict['report_cat'] = report_cat[0:4]
+                    else:
+                        tag_dict['period_division'] = report_cat[0] if re.compile(
+                            "a|s|q").match(report_cat[0]) else None
+                        tag_dict['consolidation_cat'] = report_cat[1] if re.compile(
+                            "c|n").match(report_cat[1]) else None
+                        tag_dict['report_cat'] = report_cat[2:6]
+                    
+                    # ***************************************************
+                    # JSONから取得
+                    # ***************************************************
+                    
+                    # JSONファイルを読み込む
+                    with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
+                        const_dict = json.load(const_file)
+                    
+                    tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]                    
+                    
+                    # ***************************************************
+                    # スクレイピング
+                    # ***************************************************
+
+                    # BeautifulSoupでスクレイピング
+                    soup = bs(zip_data.read(info.filename), 'lxml')
+
+                    # 提出日
+                    if tag_dict['reporting_date'] is None:
+                        date_str = re.compile(
+                            "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
+                        tag_dict['reporting_date'] = datetime.strptime(
+                            date_str, "%Y%m%d").strftime("%Y-%m-%d")
+
+                    # 会社名
+                    if tag_dict['name'] is None:
+                        company_name = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
+                            '^.*CompanyName'), re.compile('^.*AssetManagerREIT'), re.compile('FilerNameInJapaneseDEI')]})
+                        tag_dict['name'] = company_name.text if company_name is not None else None
+
+                    # 銘柄コード
+                    if tag_dict['code'] is None:
+                        code = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
+                            '^.*SecuritiesCode'), re.compile('^.*SecurityCodeDEI')]})
+                        tag_dict['code'] = code.text[0:4] if code is not None else None
+
+                    # 会計期間
+                    if tag_dict['period'] is None:
+                        period = soup.find('ix:nonfraction', attrs={
+                            'name': re.compile('^.*QuarterlyPeriod')})
+                        period = period.text if period is not None else None
+                        if period is not None:
+                            tag_dict['period'] = int(period)
+                    if tag_dict['period'] is None:
+                        period = soup.find('ix:nonnumeric', attrs={
+                            'name': re.compile('^.*CurrentPeriodDEI')})
+                        period = period.text if period is not None else None
+                        if period is not None:
+                            if re.compile('Q[0-9]{1}').search(period):
+                                tag_dict['period'] = int(re.compile(
+                                    "[0-9]{1}").search(period).group())
+                            elif period == 'FY':
+                                tag_dict['period'] = 4
+                            elif period == 'HY':
+                                tag_dict['period'] = 2
+
+        # IDを登録
+        tag_dict['id'] = self.id
+        
+        # リストに追加
+        tag_list.append(tag_dict)
+
+        return DataFrame(tag_list)
 
     def add_label_df(self) -> DataFrame:
         """勘定科目ラベルを付与した報告書・財務諸表のDataFrameを出力します。
@@ -409,7 +545,9 @@ class XbrlRead:
                         # BeautifulSoupで読み込む
                         soup = bs(zip_data.read(info.filename), 'lxml')
 
+                        # ***********************************************
                         # context<会計期間>タグを抽出
+                        # ***********************************************
                         for context in soup.find_all('xbrli:context'):
                             # 格納用の辞書を作成
                             tag_dict = dict.fromkeys(dict_keys, None)
@@ -428,65 +566,9 @@ class XbrlRead:
 
             return df
 
-        def company_data_dict() -> dict:
-            """会社の固有情報を出力します。
-
-            Returns:
-                dict: 会社固有情報
-            """
-
-            # 空の辞書を作成
-            tag_dict = dict.fromkeys(
-                ['reporting_date', 'name', 'code', 'period'], None)
-
-            # Zipファイルを展開する
-            with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
-                # ファイルを展開する
-                for info in zip_data.infolist():
-                    # 対象のファイルを抽出
-                    if re.compile("tse-.*ixbrl.htm$|^.*Summary/.*ixbrl.htm$|^.*ixbrl.htm$").search(info.filename):
-
-                        # BeautifulSoupでスクレイピング
-                        soup = bs(zip_data.read(info.filename), 'lxml')
-
-                        # 提出日
-                        if tag_dict['reporting_date'] is None:
-                            date_str = re.compile(
-                                "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
-                            tag_dict['reporting_date'] = datetime.strptime(
-                                date_str, "%Y%m%d").strftime("%Y-%m-%d")
-
-                        # 会社名
-                        if tag_dict['name'] is None:
-                            company_name = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
-                                '^.*CompanyName'), re.compile('^.*AssetManagerREIT'), re.compile('FilerNameInJapaneseDEI')]})
-                            tag_dict['name'] = company_name.text if company_name is not None else None
-
-                        # 銘柄コード
-                        if tag_dict['code'] is None:
-                            code = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
-                                '^.*SecuritiesCode'), re.compile('^.*SecurityCodeDEI')]})
-                            tag_dict['code'] = code.text[0:4] if code is not None else None
-
-                        # 会計期間
-                        if tag_dict['period'] is None:
-                            period = soup.find('ix:nonnumeric', attrs={
-                                               'name': re.compile('^.*TypeOfCurrentPeriodDEI')})
-                            period = period.text if period is not None else None
-                            if period is not None:
-                                if re.compile('Q[0-9]{1}').search(period):
-                                    tag_dict['period'] = int(re.compile(
-                                        "[0-9]{1}").search(period).group()) - 1
-                                elif period == 'FY':
-                                    tag_dict['period'] = 3
-                                elif period == 'HY':
-                                    tag_dict['period'] = 1
-
-            return tag_dict
-
         # 辞書のキーを定義する
-        dict_columns = ['reporting_date', 'code', 'period', 'doc_element', 'doc_label', 'financial_statement', 'period_division', 'consolidation_cat',
-                        'report_cat', 'report_detail_cat', 'start_date', 'end_date', 'instant_date',
+        dict_columns = ['id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
+                        'report_detail_cat', 'start_date', 'end_date', 'instant_date',
                         'namespace', 'element', 'context', 'unitref', 'format', 'numeric']
 
         # DataFrameの変数
@@ -494,9 +576,6 @@ class XbrlRead:
 
         # 名前空間に対応した日付[開始日、終了日、期末日]のDataFrame
         date_df = context_date_df()
-
-        # 会社情報を格納した辞書を読み込み
-        company_datas = company_data_dict()
 
         # XBRLを取得
         with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
@@ -534,7 +613,17 @@ class XbrlRead:
                                 raise XbrlValueNoneException("text_value")
 
                             # 空の辞書を生成********************************************************
+
                             dict_tag = dict.fromkeys(dict_columns, None)
+
+                            # IDを登録
+                            dict_tag['id'] = self.id
+
+                            # 報告日を登録
+                            dict_tag['reporting_date'] = self.reporting_date
+
+                            # 銘柄コードを登録
+                            dict_tag['code'] = self.code
 
                             # ********************************************************
                             # 名前空間、属性、コンテキストを取得*************************
@@ -546,19 +635,13 @@ class XbrlRead:
                             # *********************************************************
                             # 開始日、終了日、期末日を登録 *******************************
                             # *********************************************************
+
                             dict_tag['start_date'] = date_df[date_df['id']
                                                              == tag_contextref]['start_date'].iloc[-1]
                             dict_tag['end_date'] = date_df[date_df['id']
                                                            == tag_contextref]['end_date'].iloc[-1]
                             dict_tag['instant_date'] = date_df[date_df['id']
                                                                == tag_contextref]['instant_date'].iloc[-1]
-
-                            # *********************************************************
-                            # 会社情報を登録********************************************
-                            # *********************************************************
-                            dict_tag['reporting_date'] = company_datas['reporting_date']
-                            dict_tag['code'] = company_datas['code']
-                            dict_tag['period'] = company_datas['period']
 
                             # *********************************************************
                             # 財表識別区分を登録*****************************************
@@ -571,18 +654,13 @@ class XbrlRead:
                                 dict_tag['financial_statement'] = file_code[1]
                                 report_cat = file_code[3]
                             else:
+                                dict_tag['financial_statement'] = "summary"
                                 report_cat = file_code[1]
+                            
                             # 期区分、連結・非連結区分が省略されている場合は分岐処理
-                            if len(report_cat) == 4:
-                                dict_tag['report_cat'] = report_cat[0:4]
-                            else:
-                                dict_tag['period_division'] = report_cat[0] if re.compile(
-                                    "a|s|q").match(report_cat[0]) else None
-                                dict_tag['consolidation_cat'] = report_cat[1] if re.compile(
-                                    "c|n").match(report_cat[1]) else None
-                                dict_tag['report_cat'] = report_cat[2:6]
+                            if len(report_cat) != 4:
                                 dict_tag['report_detail_cat'] = report_cat[6:8]
-
+                                
                             # *********************************************************
                             # 書類要素名、書類ラベルを登録 *******************************
                             # *********************************************************
@@ -592,12 +670,11 @@ class XbrlRead:
                                 const_dict = json.load(const_file)
 
                                 # 報告書と財務諸表で処理分岐
-                                if dict_tag['financial_statement'] is not None:
+                                if dict_tag['financial_statement'] == "summary":
+                                    dict_tag['doc_label'] = 'サマリー'
+                                else:
                                     dict_tag['doc_element'] = const_dict['document_element'][dict_tag['financial_statement']]
                                     dict_tag['doc_label'] = const_dict['document_name'][dict_tag['financial_statement']]
-
-                                elif dict_tag['report_cat'] is not None:
-                                    dict_tag['doc_label'] = const_dict['report'][dict_tag['report_cat']]
 
                             # **********************************************************
                             # 各項目を登録***********************************************
@@ -725,7 +802,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
 
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_label', 'order', 'weight']]
 
         # リストが空の場合は例外処理
@@ -805,6 +882,7 @@ class XbrlRead:
                         for name, group in df.groupby(by='report_detail_cat'):
                             if name == 'fr':
                                 tag_df = DataFrame(fr_tag_list)
+
                                 # XBRLとリンクファイルを内部結合
                                 group = pd.merge(group, tag_df, how='inner',
                                                  left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
@@ -812,7 +890,6 @@ class XbrlRead:
                                 add_df = pd.concat([add_df, group], axis=0)
                                 # [report_detail_cat] の値をリストに追加
                                 name_list.append(name)
-
         # Dataframeを並び替え
         add_df = add_df.sort_values(
             by=['report_detail_cat', 'financial_statement'], ascending=[False, True])
@@ -824,7 +901,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
 
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -833,7 +910,7 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-
+            
         return add_df
 
     def to_pre_link_df(self) -> DataFrame:
@@ -924,7 +1001,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates()
 
         # 列を抽出する
-        add_df = add_df[['reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -953,32 +1030,37 @@ if __name__ == "__main__":
             # レコードを挿入
             sql = """
             INSERT IGNORE INTO xbrl_order 
-                (`reporting_date` ,`code` ,`period` ,`doc_element` ,`doc_label` ,`financial_statement` , 
-                `period_division` ,`consolidation_cat` ,`report_cat` ,`report_detail_cat` ,`start_date` , 
-                `end_date` ,`instant_date` ,`namespace` ,`element` ,`context` ,`unitref` ,`format` ,`numeric` ,`label`) 
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                (`id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
+                `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
+                `context` ,`unitref` ,`format` ,`numeric` ,`label`) 
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """
+            explain_sql = """
+            INSERT IGNORE INTO xbrl_explain
+                (`id`, `reporting_date`, `code`, `period`, `period_division`, `consolidation_cat`, `report_cat`, `report_label`, `company_name`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
             cal_sql = """
             INSERT IGNORE INTO xbrl_cal_link 
-                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """
             pre_sql = """
                 INSERT IGNORE INTO xbrl_pre_link 
-                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
                 """
             def_sql = """
             INSERT IGNORE INTO xbrl_def_link 
-                (`reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
                 """
 
             # ************************************************************
             # データ取得***************************************************
             # ************************************************************
 
-            start_date = date(2022, 12, 22)
+            start_date = date(2022, 12, 15)
 
             end_date = date.today()
 
@@ -1006,6 +1088,8 @@ if __name__ == "__main__":
                             file_name = os.path.splitext(
                                 os.path.basename(zip_file))[0]
                             df.to_csv(f'D:/CSV/label/{file_name}.csv')
+                            cursor.executemany(
+                                explain_sql, play.company_explain_df().values.tolist())
                             cursor.executemany(sql, df.values.tolist())
                             cursor.executemany(
                                 cal_sql, play.to_cal_link_df().values.tolist())
