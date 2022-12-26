@@ -222,22 +222,7 @@ class XbrlRead:
                             "a|s|q").match(report_cat[0]) else None
                         tag_dict['consolidation_cat'] = report_cat[1] if re.compile(
                             "c|n").match(report_cat[1]) else None
-                        tag_dict['report_cat'] = report_cat[2:6]
-                    
-                    # ***************************************************
-                    # JSONから取得
-                    # ***************************************************
-                    
-                    # JSONファイルを読み込む
-                    with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
-                        const_dict = json.load(const_file)
-                    
-                    tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]   
-                    
-                    if tag_dict['period_division'] is not None:
-                        tag_dict['period_division_label'] = const_dict['term'][tag_dict['period_division']]
-                    if tag_dict['consolidation_cat'] is not None:
-                        tag_dict['consolidation_cat_label'] = const_dict['consolidated'][tag_dict['consolidation_cat']]                 
+                        tag_dict['report_cat'] = report_cat[2:6]               
                     
                     # ***************************************************
                     # スクレイピング
@@ -284,6 +269,21 @@ class XbrlRead:
                                 tag_dict['period'] = 4
                             elif period == 'HY':
                                 tag_dict['period'] = 2
+
+        # ***************************************************
+        # JSONから取得
+        # ***************************************************
+        
+        # JSONファイルを読み込む
+        with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
+            const_dict = json.load(const_file)
+        
+        tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]   
+        
+        if tag_dict['period_division'] is not None:
+            tag_dict['period_division_label'] = const_dict['term'][tag_dict['period_division']]
+        if tag_dict['consolidation_cat'] is not None:
+            tag_dict['consolidation_cat_label'] = const_dict['consolidated'][tag_dict['consolidation_cat']]  
 
         # IDを登録
         tag_dict['id'] = self.id
