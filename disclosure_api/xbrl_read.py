@@ -344,10 +344,11 @@ class XbrlRead:
                 # URLからパス部分を抽出
                 url_path = urlparse(link).path.replace('/', '\\')
                 # ローカルパスに変換
-                local_path = os.path.join(os.path.abspath(
-                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path)
+                local_path = re.sub(r"\\","/",os.path.join(os.path.abspath(
+                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
                 # ファイルの存在を問い合わせ
                 is_file = os.path.isfile(local_path)
+                
                 # 存在しない場合、ローカルに保存x
                 try:
                     if is_file == False:
@@ -369,10 +370,11 @@ class XbrlRead:
                 # URLからパス部分を抽出
                 url_path = urlparse(link).path.replace('/', '\\')
                 # ローカルパスに変換
-                local_path = os.path.join(os.path.abspath(
-                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path)
+                local_path = re.sub(r"\\","/",os.path.join(os.path.abspath(
+                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
                 # ファイルの存在を問い合わせ
                 is_file = os.path.isfile(local_path)
+                
                 # 存在しない場合、ローカルに保存
                 try:
                     if is_file == False:
@@ -1020,7 +1022,6 @@ class XbrlRead:
 
         return add_df
 
-
 if __name__ == "__main__":
 
     # ************************************************************
@@ -1029,7 +1030,7 @@ if __name__ == "__main__":
     connection = pymysql.connect(host='localhost',
                                  user='root',
                                  password='kent6839',
-                                 database='Stock',
+                                 database='pc_stock',
                                  cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
