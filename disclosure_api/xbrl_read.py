@@ -1033,93 +1033,97 @@ if __name__ == "__main__":
                                  cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
-        with connection.cursor() as cursor:
-            # レコードを挿入
-            sql = """
-            INSERT IGNORE INTO xbrl_order 
-                (`id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
-                `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
-                `context` ,`unitref` ,`format` ,`numeric` ,`label`) 
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            explain_sql = """
-            INSERT IGNORE INTO xbrl_explain
-                (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
-                `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        
+        # レコードを挿入
+        sql = """
+        INSERT IGNORE INTO xbrl_order 
+            (`id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
+            `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
+            `context` ,`unitref` ,`format` ,`numeric` ,`label`) 
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
-            cal_sql = """
-            INSERT IGNORE INTO xbrl_cal_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            pre_sql = """
-                INSERT IGNORE INTO xbrl_pre_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            def_sql = """
-            INSERT IGNORE INTO xbrl_def_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
-                """
+        explain_sql = """
+        INSERT IGNORE INTO xbrl_explain
+            (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
+            `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        cal_sql = """
+        INSERT IGNORE INTO xbrl_cal_link 
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+        pre_sql = """
+            INSERT IGNORE INTO xbrl_pre_link 
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+        def_sql = """
+        INSERT IGNORE INTO xbrl_def_link 
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+            """
 
-            # ************************************************************
-            # データ取得***************************************************
-            # ************************************************************
+        # ************************************************************
+        # データ取得***************************************************
+        # ************************************************************
 
-            start_date = date(2022, 12, 16)
+        start_date = date(2022, 12, 16)
 
-            end_date = date.today()
+        end_date = date.today()
 
-            while start_date <= end_date:
+        while start_date <= end_date:
 
-                zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
-                zip_list = list(zip_path.glob("**/*.zip"))
+            zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
+            zip_list = list(zip_path.glob("**/*.zip"))
 
-                if len(zip_list) > 0:
+            if len(zip_list) > 0:
 
-                    # ダウンロードメッセージ
-                    print(
-                        "\n************************************************************************************")
-                    print(
-                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
-                    print(
-                        "************************************************************************************\n")
-                    # プログレスバーを設置
-                    with tqdm(total=len(zip_list)) as bar:
+                # ダウンロードメッセージ
+                print(
+                    "\n************************************************************************************")
+                print(
+                    f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
+                print(
+                    "************************************************************************************\n")
+                # プログレスバーを設置
+                with tqdm(total=len(zip_list)) as bar:
 
-                        for zip_file in zip_list:
+                    for zip_file in zip_list:
+                        
+                        cursor = connection.cursor()
 
-                            play = XbrlRead(zip_file)
-                            df = play.add_label_df()
-                            file_name = os.path.splitext(
-                                os.path.basename(zip_file))[0]
-                            df.to_csv(f'D:/CSV/label/{file_name}.csv')
-                            cursor.executemany(
-                                explain_sql, play.company_explain_df().values.tolist())
-                            cursor.executemany(sql, df.values.tolist())
-                            cursor.executemany(
-                                cal_sql, play.to_cal_link_df().values.tolist())
-                            cursor.executemany(
-                                pre_sql, play.to_pre_link_df().values.tolist())
-                            cursor.executemany(
-                                def_sql, play.to_def_link_df().values.tolist())
-                            connection.commit()
+                        play = XbrlRead(zip_file)
+                        df = play.add_label_df()
+                        file_name = os.path.splitext(
+                            os.path.basename(zip_file))[0]
+                        df.to_csv(f'D:/CSV/label/{file_name}.csv')
+                        cursor.executemany(
+                            explain_sql, play.company_explain_df().values.tolist())
+                        cursor.executemany(sql, df.values.tolist())
+                        cursor.executemany(
+                            cal_sql, play.to_cal_link_df().values.tolist())
+                        cursor.executemany(
+                            pre_sql, play.to_pre_link_df().values.tolist())
+                        cursor.executemany(
+                            def_sql, play.to_def_link_df().values.tolist())
+                        
+                        connection.commit()
+                        cursor.close()
 
-                            bar.update(1)
+                        bar.update(1)
 
-                    # 終了メッセージ
-                    print(f"\n     {len(zip_list)}件のデータをインポートしました。")
+                # 終了メッセージ
+                print(f"\n     {len(zip_list)}件のデータをインポートしました。")
 
-                else:
+            else:
 
-                    # メッセージ
-                    print(
-                        "\n************************************************************************************")
-                    print(
-                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
-                    print(
-                        "************************************************************************************\n")
+                # メッセージ
+                print(
+                    "\n************************************************************************************")
+                print(
+                    f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
+                print(
+                    "************************************************************************************\n")
 
-                start_date += timedelta(days=1)
+            start_date += timedelta(days=1)
