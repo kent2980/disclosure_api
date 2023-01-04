@@ -14,6 +14,7 @@ import pymysql.cursors
 import json
 from tqdm import tqdm
 from datetime import date, timedelta
+import uuid
 
 
 class MyException(Exception):
@@ -159,7 +160,7 @@ class XbrlRead:
         self.code = self.get_company_code()
 
         # ID(zipファイル名)を取得
-        self.id = os.path.splitext(os.path.basename(xbrl_zip_path))[0]
+        self.id = uuid.uuid4()
 
         # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
@@ -187,14 +188,14 @@ class XbrlRead:
         Returns:
             dict: 会社固有情報
         """
-        
+
         # 空のリストを作成
         tag_list = []
 
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
-            ['id', 'reporting_date', 'code', 'period','period_division', 'period_division_label','consolidation_cat', 
-             'consolidation_cat_label','report_cat', 'report_label','name'], None)
+            ['id', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
+             'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
@@ -202,7 +203,7 @@ class XbrlRead:
             for info in zip_data.infolist():
                 # 対象のファイルを抽出
                 if re.compile("tse-.*ixbrl.htm$|^.*Summary/.*ixbrl.htm$|^.*ixbrl.htm$").search(info.filename):
-                    
+
                     # ***************************************************
                     # ファイル名から取得
                     # ***************************************************
@@ -213,7 +214,7 @@ class XbrlRead:
                         report_cat = file_code[3]
                     else:
                         report_cat = file_code[1]
-                        
+
                     # 期区分、連結・非連結区分が省略されている場合は分岐処理
                     if len(report_cat) == 4:
                         tag_dict['report_cat'] = report_cat[0:4]
@@ -222,8 +223,8 @@ class XbrlRead:
                             "a|s|q").match(report_cat[0]) else None
                         tag_dict['consolidation_cat'] = report_cat[1] if re.compile(
                             "c|n").match(report_cat[1]) else None
-                        tag_dict['report_cat'] = report_cat[2:6]               
-                    
+                        tag_dict['report_cat'] = report_cat[2:6]
+
                     # ***************************************************
                     # スクレイピング
                     # ***************************************************
@@ -273,21 +274,21 @@ class XbrlRead:
         # ***************************************************
         # JSONから取得
         # ***************************************************
-        
+
         # JSONファイルを読み込む
         with open(f"{os.path.dirname(__file__)}/const/const.json", mode='r', encoding='utf-8') as const_file:
             const_dict = json.load(const_file)
-        
-        tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]   
-        
+
+        tag_dict['report_label'] = const_dict['report'][tag_dict['report_cat']]
+
         if tag_dict['period_division'] is not None:
             tag_dict['period_division_label'] = const_dict['term'][tag_dict['period_division']]
         if tag_dict['consolidation_cat'] is not None:
-            tag_dict['consolidation_cat_label'] = const_dict['consolidated'][tag_dict['consolidation_cat']]  
+            tag_dict['consolidation_cat_label'] = const_dict['consolidated'][tag_dict['consolidation_cat']]
 
         # IDを登録
         tag_dict['id'] = self.id
-        
+
         # リストに追加
         tag_list.append(tag_dict)
 
@@ -344,11 +345,11 @@ class XbrlRead:
                 # URLからパス部分を抽出
                 url_path = urlparse(link).path.replace('/', '\\')
                 # ローカルパスに変換
-                local_path = re.sub(r"\\","/",os.path.join(os.path.abspath(
+                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
                     os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
                 # ファイルの存在を問い合わせ
                 is_file = os.path.isfile(local_path)
-                
+
                 # 存在しない場合、ローカルに保存x
                 try:
                     if is_file == False:
@@ -370,11 +371,11 @@ class XbrlRead:
                 # URLからパス部分を抽出
                 url_path = urlparse(link).path.replace('/', '\\')
                 # ローカルパスに変換
-                local_path = re.sub(r"\\","/",os.path.join(os.path.abspath(
+                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
                     os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
                 # ファイルの存在を問い合わせ
                 is_file = os.path.isfile(local_path)
-                
+
                 # 存在しない場合、ローカルに保存
                 try:
                     if is_file == False:
@@ -521,8 +522,18 @@ class XbrlRead:
         master_df = add_label_link(xbrl_df, global_label_xml)
 
         # 重複業を削除
-        master_df = master_df.drop_duplicates()
+        master_df = master_df.drop_duplicates().reset_index()
+        
+        # id → explain_id に変更します。
+        master_df = master_df.rename(columns={'id':'explain_id'})
 
+        # 一意のIDを付与する
+        master_df['id'] = pd.Series([str(uuid.uuid4())
+                                    for _ in range(len(master_df.values))])
+        
+        # カラムを並び替え
+        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'element', 'context', 'unitref', 'format', 'numeric', 'label']]
+        
         return master_df
 
     def to_dataframe(self) -> DataFrame:
@@ -664,11 +675,11 @@ class XbrlRead:
                             else:
                                 dict_tag['financial_statement'] = "summary"
                                 report_cat = file_code[1]
-                            
+
                             # 期区分、連結・非連結区分が省略されている場合は分岐処理
                             if len(report_cat) != 4:
                                 dict_tag['report_detail_cat'] = report_cat[6:8]
-                                
+
                             # *********************************************************
                             # 書類要素名、書類ラベルを登録 *******************************
                             # *********************************************************
@@ -771,30 +782,46 @@ class XbrlRead:
                             # 空の辞書
                             tag_dict = {}
 
+                            # 正規表現を定義
+                            comp = "[A-Za-z0-9]+$"
+                            
+                            # *************************
                             # 要素を登録
+                            # *************************
+                            
+                            # 書類種別
                             tag_dict['doc_element'] = doc_element
-                            l_com = "[A-Za-z0-9]+$"
+                            
+                            # 名前空間
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
+                            
+                            # 親ラベル
                             tag_dict['from_label'] = re.compile(
-                                l_com).search(tag.get('xlink:from')).group()
+                                comp).search(tag.get('xlink:from')).group()
+                            
+                            # 参照ラベル
                             tag_dict['to_label'] = re.compile(
-                                l_com).search(tag.get('xlink:to')).group()
+                                comp).search(tag.get('xlink:to')).group()
+                            
+                            # 順位
                             tag_dict['order'] = tag.get('order')
+                            
+                            # 重み
                             tag_dict['weight'] = tag.get('weight')
 
                             # リストに追加
                             tag_list.append(tag_dict)
 
-                    break
-
         # リストからDataFrameに変換
         tag_df = DataFrame(tag_list)
-
+        
         # 計算リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
                 # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
-                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
+                                 left_on=['element', 'doc_element', 'namespace'], right_on=['to_label', 'doc_element', 'namespace'])
                 # マスタフレームに追加
                 add_df = pd.concat([add_df, group], axis=0)
                 # [report_detail_cat] の値をリストに追加
@@ -808,7 +835,7 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # 重複する行を削除
-        add_df = add_df.drop_duplicates()
+        add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
@@ -820,6 +847,17 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
+            
+        # id → explain_id に変更します。
+        add_df = add_df.rename(columns={'id':'explain_id'})
+            
+        # 一意のIDを付与する
+        add_df['id'] = pd.Series([str(uuid.uuid4())
+                                    for _ in range(len(add_df))])
+        
+        # カラムの順番を変更
+        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order', 'weight']]
 
         return add_df
 
@@ -870,14 +908,30 @@ class XbrlRead:
 
                             # 空の辞書
                             tag_dict = {}
-
-                            # 要素を登録
-                            tag_dict['doc_element'] = doc_element
+                            
+                            # 正規表現を定義
                             l_com = "[A-Za-z0-9]+$"
+
+                            # ******************************
+                            # 要素を登録
+                            # ******************************
+                            
+                            # 書類品種
+                            tag_dict['doc_element'] = doc_element
+                            
+                            # 名前空間
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
+                            
+                            # 親ラベル
                             tag_dict['from_label'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
+                            
+                            # 参照ラベル
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
+                            
+                            # 順位
                             tag_dict['order'] = tag.get('order')
 
                             # リストに追加
@@ -894,7 +948,7 @@ class XbrlRead:
 
                                 # XBRLとリンクファイルを内部結合
                                 group = pd.merge(group, tag_df, how='inner',
-                                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
+                                                 left_on=['element', 'doc_element', 'namespace'], right_on=['to_label', 'doc_element', 'namespace'])
                                 # マスタフレームに追加
                                 add_df = pd.concat([add_df, group], axis=0)
                                 # [report_detail_cat] の値をリストに追加
@@ -907,7 +961,7 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # 重複業を削除
-        add_df = add_df.drop_duplicates()
+        add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
@@ -920,6 +974,17 @@ class XbrlRead:
         except LinkListEmptyException as identifier:
             print(identifier)
             
+        # id → explain_id に変更します。
+        add_df = add_df.rename(columns={'id':'explain_id'})
+            
+        # 一意のIDを付与する
+        add_df['id'] = pd.Series([str(uuid.uuid4())
+                                    for _ in range(len(add_df))])
+        
+        # カラムの順番を変更
+        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order']]
+
         return add_df
 
     def to_pre_link_df(self) -> DataFrame:
@@ -971,13 +1036,29 @@ class XbrlRead:
                             # 空の辞書
                             tag_dict = {}
 
+                            # ***********************
                             # 要素を登録
+                            # ***********************
+                            
+                            # 書類品種
                             tag_dict['doc_element'] = doc_element
+                            
+                            # 名前空間
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
+                            
+                            # 正規表現を定義
                             l_com = "[A-Za-z0-9]+$"
+                            
+                            # 親ラベル
                             tag_dict['from_label'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
+                            
+                            # 参照ラベル
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
+                            
+                            # 順位
                             tag_dict['order'] = tag.get('order')
 
                             # リストに追加
@@ -991,11 +1072,14 @@ class XbrlRead:
         # 表示リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
+                
                 # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
-                                 left_on=['element', 'doc_element'], right_on=['to_label', 'doc_element'])
+                                 left_on=['element', 'doc_element', 'namespace'], right_on=['to_label', 'doc_element', 'namespace'])
+                
                 # マスタフレームに追加
                 add_df = pd.concat([add_df, group], axis=0)
+                
                 # [report_detail_cat] の値をリストに追加
                 name_list.append(name)
 
@@ -1007,7 +1091,7 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # 重複行を削除
-        add_df = add_df.drop_duplicates()
+        add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
@@ -1019,8 +1103,20 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
+            
+        # id → explain_id に変更します。
+        add_df = add_df.rename(columns={'id':'explain_id'})
+            
+        # 一意のIDを付与する
+        add_df['id'] = pd.Series([str(uuid.uuid4())
+                                    for _ in range(len(add_df))])
+        
+        # カラムの順番を変更
+        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_label', 'order']]
 
         return add_df
+
 
 if __name__ == "__main__":
 
@@ -1034,14 +1130,14 @@ if __name__ == "__main__":
                                  cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
-        
+
         # レコードを挿入
         sql = """
         INSERT IGNORE INTO xbrl_order 
-            (`id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
+            (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
             `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
             `context` ,`unitref` ,`format` ,`numeric` ,`label`) 
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         explain_sql = """
         INSERT IGNORE INTO xbrl_explain
@@ -1051,25 +1147,40 @@ if __name__ == "__main__":
         """
         cal_sql = """
         INSERT IGNORE INTO xbrl_cal_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         pre_sql = """
             INSERT IGNORE INTO xbrl_pre_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         def_sql = """
         INSERT IGNORE INTO xbrl_def_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+        cal_inter_sql = """
+        INSERT IGNORE INTO xbrl_cal_id 
+            (`id`, `order_id`, `cal_id`) 
+            VALUES(%s,%s,%s)
+            """
+        pre_inter_sql = """
+        INSERT IGNORE INTO xbrl_pre_id 
+            (`id`, `order_id`, `pre_id`) 
+            VALUES(%s,%s,%s)
+            """
+        def_inter_sql = """
+        INSERT IGNORE INTO xbrl_def_id 
+            (`id`, `order_id`, `def_id`) 
+            VALUES(%s,%s,%s)
             """
 
         # ************************************************************
         # データ取得***************************************************
         # ************************************************************
 
-        start_date = date(2022, 12, 16)
+        start_date = date(2022, 10, 3)
 
         end_date = date.today()
 
@@ -1091,27 +1202,68 @@ if __name__ == "__main__":
                 with tqdm(total=len(zip_list)) as bar:
 
                     for zip_file in zip_list:
-                        
+                        from time import time
+                        start = time()
                         cursor = connection.cursor()
 
-                        play = XbrlRead(zip_file)
-                        df = play.add_label_df()
-                        file_name = os.path.splitext(
-                            os.path.basename(zip_file))[0]
-                        df.to_csv(f'D:/CSV/label/{file_name}.csv')
-                        cursor.executemany(
-                            explain_sql, play.company_explain_df().values.tolist())
-                        cursor.executemany(sql, df.values.tolist())
-                        cursor.executemany(
-                            cal_sql, play.to_cal_link_df().values.tolist())
-                        cursor.executemany(
-                            pre_sql, play.to_pre_link_df().values.tolist())
-                        cursor.executemany(
-                            def_sql, play.to_def_link_df().values.tolist())
+                        xr = XbrlRead(zip_file)
                         
+                        # ***************************
+                        # DataFrame取得
+                        # ***************************
+                        
+                        # 会社詳細
+                        explain_df = xr.company_explain_df()
+                        
+                        # 財務諸表
+                        label_df = xr.add_label_df() 
+                        label_df.to_csv("D:/CSV/label.csv")
+                        # 計算リンク 
+                        cal_df = xr.to_cal_link_df()
+                        # 中間テーブル
+                        inter_cal_df = label_df.rename(columns={'id':'order_id'}).merge(cal_df.rename(columns={'id':'cal_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
+                        inter_cal_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_cal_df)))
+                        inter_cal_df = inter_cal_df[['id', 'order_id', 'cal_id']]
+                        
+                        # 表示リンク
+                        pre_df = xr.to_pre_link_df() 
+                        # 中間テーブル
+                        inter_pre_df = label_df.rename(columns={'id':'order_id'}).merge(pre_df.rename(columns={'id':'pre_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
+                        inter_pre_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_pre_df)))
+                        inter_pre_df = inter_pre_df[['id', 'order_id', 'pre_id']]
+                        
+                        # 定義リンク   
+                        def_df = xr.to_def_link_df()
+                        # 中間テーブル
+                        inter_def_df = label_df.rename(columns={'id':'order_id'}).merge(def_df.rename(columns={'id':'def_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
+                        inter_def_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_def_df)))
+                        inter_def_df = inter_def_df[['id', 'order_id', 'def_id']]
+                        print(f'取得時間:{time()-start}')
+                        # *************************
+                        # テーブル更新
+                        # *************************
+                        start = time()
+                        # 会社詳細
+                        cursor.executemany(
+                            explain_sql, xr.company_explain_df().values.tolist())
+                        # 財務諸表
+                        cursor.executemany(sql, label_df.values.tolist())
+                        # 計算リンク
+                        cursor.executemany(
+                            cal_sql, cal_df.values.tolist())
+                        cursor.executemany(cal_inter_sql, inter_cal_df.values.tolist())
+                        # 表示リンク
+                        cursor.executemany(
+                            pre_sql, pre_df.values.tolist())
+                        cursor.executemany(pre_inter_sql, inter_pre_df.values.tolist())
+                        # 定義リンク
+                        cursor.executemany(
+                            def_sql, def_df.values.tolist())
+                        cursor.executemany(def_inter_sql, inter_def_df.values.tolist())
+
                         connection.commit()
                         cursor.close()
-
+                        print(f'書き込み時間:{time()-start}')
                         bar.update(1)
 
                 # 終了メッセージ
