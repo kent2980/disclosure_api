@@ -160,8 +160,8 @@ class XbrlRead:
         self.code = self.get_company_code()
 
         # ID(zipファイル名)を取得
-        self.id = uuid.uuid4()
-
+        self.id = os.path.split(os.path.basename(self.xbrl_zip_path))[0]
+        
         # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
 
