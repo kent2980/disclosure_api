@@ -406,7 +406,7 @@ class XbrlRead:
 
             # データ構造のみコピー
             tag_df = df[:0]
-            tag_df['label'] = None
+            tag_df['element_label'] = None
 
             # namespace毎にグループ化
             group_df = df.groupby('namespace')
@@ -443,7 +443,7 @@ class XbrlRead:
                                 tag_dict['element'] = re.sub(
                                     "^label_", "", tag.get('xlink:label'))
                                 # labelを抽出
-                                tag_dict['label'] = tag.text
+                                tag_dict['element_label'] = tag.text
                                 # リストに辞書を追加
                                 tag_list.append(tag_dict)
 
@@ -489,7 +489,7 @@ class XbrlRead:
                                         f"{namespace}_", "", element)
                                     tag_dict['element'] = element
                                     # labelを抽出
-                                    tag_dict['label'] = tag.text
+                                    tag_dict['element_label'] = tag.text
                                     # リストに辞書を追加
                                     tag_list.append(tag_dict)
 
@@ -532,7 +532,7 @@ class XbrlRead:
                                     for _ in range(len(master_df.values))])
         
         # カラムを並び替え
-        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'element', 'context', 'unitref', 'format', 'numeric', 'label']]
+        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'element', 'context', 'unitref', 'format', 'numeric', 'element_label']]
         
         return master_df
 
@@ -749,7 +749,7 @@ class XbrlRead:
 
         # データ構造のみコピー
         add_df = df[:0]
-        add_df['from_label'] = None
+        add_df['from_element'] = None
         add_df['to_label'] = None
         add_df['order'] = None
         add_df['weight'] = None
@@ -797,7 +797,7 @@ class XbrlRead:
                             tag_dict['namespace'] = re.sub("_$|#", "", namespace)
                             
                             # 親ラベル
-                            tag_dict['from_label'] = re.compile(
+                            tag_dict['from_element'] = re.compile(
                                 comp).search(tag.get('xlink:from')).group()
                             
                             # 参照ラベル
@@ -839,7 +839,7 @@ class XbrlRead:
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order', 'weight']]
+                         'namespace', 'element', 'from_element', 'order', 'weight']]
 
         # リストが空の場合は例外処理
         try:
@@ -857,7 +857,7 @@ class XbrlRead:
         
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order', 'weight']]
+                         'namespace', 'element', 'from_element', 'order', 'weight']]
 
         return add_df
 
@@ -879,7 +879,7 @@ class XbrlRead:
         # データ構造のみコピー
         add_df = df[:0]
         add_df = add_df.assign(
-            from_label=None, to_label=None, order=None)
+            from_element=None, to_label=None, order=None)
 
         # ZIPファイルを展開
         with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
@@ -924,7 +924,7 @@ class XbrlRead:
                             tag_dict['namespace'] = re.sub("_$|#", "", namespace)
                             
                             # 親ラベル
-                            tag_dict['from_label'] = re.compile(
+                            tag_dict['from_element'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
                             
                             # 参照ラベル
@@ -965,7 +965,7 @@ class XbrlRead:
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order']]
+                         'namespace', 'element', 'from_element', 'order']]
 
         # リストが空の場合は例外処理
         try:
@@ -983,7 +983,7 @@ class XbrlRead:
         
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order']]
+                         'namespace', 'element', 'from_element', 'order']]
 
         return add_df
 
@@ -1003,7 +1003,7 @@ class XbrlRead:
 
         # データ構造のみコピー
         add_df = df[:0]
-        add_df['from_label'] = None
+        add_df['from_element'] = None
         add_df['to_label'] = None
         add_df['order'] = None
 
@@ -1051,7 +1051,7 @@ class XbrlRead:
                             l_com = "[A-Za-z0-9]+$"
                             
                             # 親ラベル
-                            tag_dict['from_label'] = re.compile(
+                            tag_dict['from_element'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
                             
                             # 参照ラベル
@@ -1095,7 +1095,7 @@ class XbrlRead:
 
         # 列を抽出する
         add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order']]
+                         'namespace', 'element', 'from_element', 'order']]
 
         # リストが空の場合は例外処理
         try:
@@ -1113,7 +1113,7 @@ class XbrlRead:
         
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_label', 'order']]
+                         'namespace', 'element', 'from_element', 'order']]
 
         return add_df
 
@@ -1136,7 +1136,7 @@ if __name__ == "__main__":
         INSERT IGNORE INTO xbrl_order 
             (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
             `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
-            `context` ,`unitref` ,`format` ,`numeric` ,`label`) 
+            `context` ,`unitref` ,`format` ,`numeric` ,`element_label`) 
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         explain_sql = """
@@ -1147,17 +1147,17 @@ if __name__ == "__main__":
         """
         cal_sql = """
         INSERT IGNORE INTO xbrl_cal_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`, `weight`)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         pre_sql = """
             INSERT IGNORE INTO xbrl_pre_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         def_sql = """
         INSERT IGNORE INTO xbrl_def_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_label`, `order`)
+            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         cal_inter_sql = """
@@ -1202,10 +1202,8 @@ if __name__ == "__main__":
                 with tqdm(total=len(zip_list)) as bar:
 
                     for zip_file in zip_list:
-                        from time import time
-                        start = time()
-                        cursor = connection.cursor()
-
+                        
+                        # XBRLの読み取り開始
                         xr = XbrlRead(zip_file)
                         
                         # ***************************
@@ -1217,7 +1215,7 @@ if __name__ == "__main__":
                         
                         # 財務諸表
                         label_df = xr.add_label_df() 
-                        label_df.to_csv("D:/CSV/label.csv")
+                        
                         # 計算リンク 
                         cal_df = xr.to_cal_link_df()
                         # 中間テーブル
@@ -1238,33 +1236,35 @@ if __name__ == "__main__":
                         inter_def_df = label_df.rename(columns={'id':'order_id'}).merge(def_df.rename(columns={'id':'def_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
                         inter_def_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_def_df)))
                         inter_def_df = inter_def_df[['id', 'order_id', 'def_id']]
-                        print(f'取得時間:{time()-start}')
+                        
                         # *************************
                         # テーブル更新
                         # *************************
-                        start = time()
-                        # 会社詳細
-                        cursor.executemany(
-                            explain_sql, xr.company_explain_df().values.tolist())
-                        # 財務諸表
-                        cursor.executemany(sql, label_df.values.tolist())
-                        # 計算リンク
-                        cursor.executemany(
-                            cal_sql, cal_df.values.tolist())
-                        cursor.executemany(cal_inter_sql, inter_cal_df.values.tolist())
-                        # 表示リンク
-                        cursor.executemany(
-                            pre_sql, pre_df.values.tolist())
-                        cursor.executemany(pre_inter_sql, inter_pre_df.values.tolist())
-                        # 定義リンク
-                        cursor.executemany(
-                            def_sql, def_df.values.tolist())
-                        cursor.executemany(def_inter_sql, inter_def_df.values.tolist())
+                        with connection.cursor() as cursor:
+                            
+                            # 会社詳細
+                            cursor.executemany(
+                                explain_sql, xr.company_explain_df().values.tolist())
+                            # 財務諸表
+                            cursor.executemany(sql, label_df.values.tolist())
+                            # 計算リンク
+                            cursor.executemany(
+                                cal_sql, cal_df.values.tolist())
+                            cursor.executemany(cal_inter_sql, inter_cal_df.values.tolist())
+                            # 表示リンク
+                            cursor.executemany(
+                                pre_sql, pre_df.values.tolist())
+                            cursor.executemany(pre_inter_sql, inter_pre_df.values.tolist())
+                            # 定義リンク
+                            cursor.executemany(
+                                def_sql, def_df.values.tolist())
+                            cursor.executemany(def_inter_sql, inter_def_df.values.tolist())
 
-                        connection.commit()
-                        cursor.close()
-                        print(f'書き込み時間:{time()-start}')
-                        bar.update(1)
+                            # データベース更新
+                            connection.commit()
+                            
+                            # プログレスバーを更新
+                            bar.update(1)
 
                 # 終了メッセージ
                 print(f"\n     {len(zip_list)}件のデータをインポートしました。")
