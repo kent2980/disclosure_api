@@ -523,17 +523,16 @@ class XbrlRead:
 
         # 重複業を削除
         master_df = master_df.drop_duplicates().reset_index()
-        
+
         # id → explain_id に変更します。
-        master_df = master_df.rename(columns={'id':'explain_id'})
+        # master_df = master_df.rename(columns={'id':'explain_id'})
 
         # 一意のIDを付与する
-        master_df['id'] = pd.Series([str(uuid.uuid4())
-                                    for _ in range(len(master_df.values))])
-        
+        # master_df['id'] = pd.Series([str(uuid.uuid4()) for _ in range(len(master_df.values))])
+
         # カラムを並び替え
-        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'element', 'context', 'unitref', 'format', 'numeric', 'element_label']]
-        
+        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
+
         return master_df
 
     def to_dataframe(self) -> DataFrame:
@@ -586,9 +585,9 @@ class XbrlRead:
             return df
 
         # 辞書のキーを定義する
-        dict_columns = ['id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
+        dict_columns = ['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
-                        'namespace', 'element', 'context', 'unitref', 'format', 'numeric']
+                        'namespace',  'unitref', 'format','element', 'context', 'numeric']
 
         # DataFrameの変数
         df = pd.DataFrame(columns=dict_columns)
@@ -636,7 +635,10 @@ class XbrlRead:
                             dict_tag = dict.fromkeys(dict_columns, None)
 
                             # IDを登録
-                            dict_tag['id'] = self.id
+                            dict_tag['id'] = uuid.uuid4()
+
+                            # explain_IDを登録
+                            dict_tag['explain_id'] = self.id
 
                             # 報告日を登録
                             dict_tag['reporting_date'] = self.reporting_date
@@ -733,7 +735,7 @@ class XbrlRead:
 
         return df
 
-    def to_cal_link_df(self) -> DataFrame:
+    def to_cal_link_df(self) -> tuple:
         """各ラベルに対応した計算リンク(DataFrame)を出力します。
 
         Returns:
@@ -784,29 +786,31 @@ class XbrlRead:
 
                             # 正規表現を定義
                             comp = "[A-Za-z0-9]+$"
-                            
+
                             # *************************
                             # 要素を登録
                             # *************************
-                            
+
                             # 書類種別
                             tag_dict['doc_element'] = doc_element
-                            
+
                             # 名前空間
-                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
-                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
-                            
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={
+                                                  'xlink:label': tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub(
+                                "_$|#", "", namespace)
+
                             # 親ラベル
                             tag_dict['from_element'] = re.compile(
                                 comp).search(tag.get('xlink:from')).group()
-                            
+
                             # 参照ラベル
                             tag_dict['to_label'] = re.compile(
                                 comp).search(tag.get('xlink:to')).group()
-                            
+
                             # 順位
                             tag_dict['order'] = tag.get('order')
-                            
+
                             # 重み
                             tag_dict['weight'] = tag.get('weight')
 
@@ -815,7 +819,7 @@ class XbrlRead:
 
         # リストからDataFrameに変換
         tag_df = DataFrame(tag_list)
-        
+
         # 計算リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
@@ -847,21 +851,27 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-            
+
         # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id':'explain_id'})
-            
+        add_df = add_df.rename(columns={'id': 'explain_id'})
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
-                                    for _ in range(len(add_df))])
-        
+                                  for _ in range(len(add_df))])
+
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order', 'weight']]
 
-        return add_df
+        # *****************************
+        # 中間テーブルを生成
+        # *****************************
 
-    def to_def_link_df(self) -> DataFrame:
+        association_df = self.__to_link_association(add_df)
+
+        return add_df.drop(columns=['explain_id']), association_df
+
+    def to_def_link_df(self) -> tuple:
         """各ラベルに対応した定義リンク(DataFrame)を出力します。
 
         Returns:
@@ -908,29 +918,31 @@ class XbrlRead:
 
                             # 空の辞書
                             tag_dict = {}
-                            
+
                             # 正規表現を定義
                             l_com = "[A-Za-z0-9]+$"
 
                             # ******************************
                             # 要素を登録
                             # ******************************
-                            
+
                             # 書類品種
                             tag_dict['doc_element'] = doc_element
-                            
+
                             # 名前空間
-                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
-                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
-                            
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={
+                                                  'xlink:label': tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub(
+                                "_$|#", "", namespace)
+
                             # 親ラベル
                             tag_dict['from_element'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
-                            
+
                             # 参照ラベル
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
-                            
+
                             # 順位
                             tag_dict['order'] = tag.get('order')
 
@@ -973,21 +985,27 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-            
+
         # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id':'explain_id'})
-            
+        add_df = add_df.rename(columns={'id': 'explain_id'})
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
-                                    for _ in range(len(add_df))])
-        
+                                  for _ in range(len(add_df))])
+
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order']]
 
-        return add_df
+        # *****************************
+        # 中間テーブルを生成
+        # *****************************
 
-    def to_pre_link_df(self) -> DataFrame:
+        association_df = self.__to_link_association(add_df)
+
+        return add_df.drop(columns=['explain_id']), association_df
+
+    def to_pre_link_df(self) -> tuple:
         """各ラベルに対応した表示リンク(DataFrame)を出力します。
 
         Returns:
@@ -1039,25 +1057,27 @@ class XbrlRead:
                             # ***********************
                             # 要素を登録
                             # ***********************
-                            
+
                             # 書類品種
                             tag_dict['doc_element'] = doc_element
-                            
+
                             # 名前空間
-                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={'xlink:label':tag.get('xlink:to')}).get('xlink:href')).group()
-                            tag_dict['namespace'] = re.sub("_$|#", "", namespace)
-                            
+                            namespace = re.search("#.*_", soup.find(name='link:loc', attrs={
+                                                  'xlink:label': tag.get('xlink:to')}).get('xlink:href')).group()
+                            tag_dict['namespace'] = re.sub(
+                                "_$|#", "", namespace)
+
                             # 正規表現を定義
                             l_com = "[A-Za-z0-9]+$"
-                            
+
                             # 親ラベル
                             tag_dict['from_element'] = re.compile(
                                 l_com).search(tag.get('xlink:from')).group()
-                            
+
                             # 参照ラベル
                             tag_dict['to_label'] = re.compile(
                                 l_com).search(tag.get('xlink:to')).group()
-                            
+
                             # 順位
                             tag_dict['order'] = tag.get('order')
 
@@ -1072,14 +1092,14 @@ class XbrlRead:
         # 表示リンクをDataFrameに付与
         for name, group in df.groupby(by='report_detail_cat'):
             if name == 'fr':
-                
+
                 # XBRLとリンクファイルを内部結合
                 group = pd.merge(group, tag_df, how='inner',
                                  left_on=['element', 'doc_element', 'namespace'], right_on=['to_label', 'doc_element', 'namespace'])
-                
+
                 # マスタフレームに追加
                 add_df = pd.concat([add_df, group], axis=0)
-                
+
                 # [report_detail_cat] の値をリストに追加
                 name_list.append(name)
 
@@ -1103,19 +1123,35 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-            
+
         # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id':'explain_id'})
-            
+        add_df = add_df.rename(columns={'id': 'explain_id'})
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
-                                    for _ in range(len(add_df))])
-        
+                                  for _ in range(len(add_df))])
+
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order']]
 
-        return add_df
+        # *****************************
+        # 中間テーブルを生成
+        # *****************************
+
+        association_df = self.__to_link_association(add_df)
+
+        return add_df.drop(columns=['explain_id']), association_df
+
+    def __to_link_association(self, link_df: DataFrame) -> DataFrame:
+        # 中間テーブル
+        association_df = self.xbrl_df.rename(columns={'id': 'order_id'}).merge(link_df.rename(
+            columns={'id': 'link_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
+        association_df['id'] = pd.Series(
+            str(uuid.uuid4()) for _ in range(len(association_df)))
+        association_df = association_df[['id', 'order_id', 'link_id']]
+
+        return association_df
 
 
 if __name__ == "__main__":
@@ -1135,8 +1171,8 @@ if __name__ == "__main__":
         sql = """
         INSERT IGNORE INTO xbrl_order 
             (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
-            `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,`element` ,
-            `context` ,`unitref` ,`format` ,`numeric` ,`element_label`) 
+            `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,
+            `unitref` ,`format`,`element`  ,`element_label`,`context` ,`numeric` ) 
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         explain_sql = """
@@ -1147,31 +1183,31 @@ if __name__ == "__main__":
         """
         cal_sql = """
         INSERT IGNORE INTO xbrl_cal_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         pre_sql = """
             INSERT IGNORE INTO xbrl_pre_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
         def_sql = """
         INSERT IGNORE INTO xbrl_def_link 
-            (`id`, `explain_id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
+            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
-        cal_inter_sql = """
-        INSERT IGNORE INTO xbrl_cal_id 
+        cal_association_sql = """
+        INSERT IGNORE INTO xbrl_cal_association 
             (`id`, `order_id`, `cal_id`) 
             VALUES(%s,%s,%s)
             """
-        pre_inter_sql = """
-        INSERT IGNORE INTO xbrl_pre_id 
+        pre_association_sql = """
+        INSERT IGNORE INTO xbrl_pre_association 
             (`id`, `order_id`, `pre_id`) 
             VALUES(%s,%s,%s)
             """
-        def_inter_sql = """
-        INSERT IGNORE INTO xbrl_def_id 
+        def_association_sql = """
+        INSERT IGNORE INTO xbrl_def_association 
             (`id`, `order_id`, `def_id`) 
             VALUES(%s,%s,%s)
             """
@@ -1202,46 +1238,34 @@ if __name__ == "__main__":
                 with tqdm(total=len(zip_list)) as bar:
 
                     for zip_file in zip_list:
-                        
+
                         # XBRLの読み取り開始
                         xr = XbrlRead(zip_file)
-                        
+
                         # ***************************
                         # DataFrame取得
                         # ***************************
-                        
+
                         # 会社詳細
                         explain_df = xr.company_explain_df()
-                        
+
                         # 財務諸表
-                        label_df = xr.add_label_df() 
-                        
-                        # 計算リンク 
+                        label_df = xr.add_label_df()
+
+                        # 計算リンク
                         cal_df = xr.to_cal_link_df()
-                        # 中間テーブル
-                        inter_cal_df = label_df.rename(columns={'id':'order_id'}).merge(cal_df.rename(columns={'id':'cal_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-                        inter_cal_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_cal_df)))
-                        inter_cal_df = inter_cal_df[['id', 'order_id', 'cal_id']]
-                        
+
                         # 表示リンク
-                        pre_df = xr.to_pre_link_df() 
-                        # 中間テーブル
-                        inter_pre_df = label_df.rename(columns={'id':'order_id'}).merge(pre_df.rename(columns={'id':'pre_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-                        inter_pre_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_pre_df)))
-                        inter_pre_df = inter_pre_df[['id', 'order_id', 'pre_id']]
-                        
-                        # 定義リンク   
+                        pre_df = xr.to_pre_link_df()
+
+                        # 定義リンク
                         def_df = xr.to_def_link_df()
-                        # 中間テーブル
-                        inter_def_df = label_df.rename(columns={'id':'order_id'}).merge(def_df.rename(columns={'id':'def_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-                        inter_def_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(inter_def_df)))
-                        inter_def_df = inter_def_df[['id', 'order_id', 'def_id']]
-                        
+
                         # *************************
                         # テーブル更新
                         # *************************
                         with connection.cursor() as cursor:
-                            
+
                             # 会社詳細
                             cursor.executemany(
                                 explain_sql, xr.company_explain_df().values.tolist())
@@ -1249,20 +1273,23 @@ if __name__ == "__main__":
                             cursor.executemany(sql, label_df.values.tolist())
                             # 計算リンク
                             cursor.executemany(
-                                cal_sql, cal_df.values.tolist())
-                            cursor.executemany(cal_inter_sql, inter_cal_df.values.tolist())
+                                cal_sql, cal_df[0].values.tolist())
+                            cursor.executemany(
+                                cal_association_sql, cal_df[1].values.tolist())
                             # 表示リンク
                             cursor.executemany(
-                                pre_sql, pre_df.values.tolist())
-                            cursor.executemany(pre_inter_sql, inter_pre_df.values.tolist())
+                                pre_sql, pre_df[0].values.tolist())
+                            cursor.executemany(
+                                pre_association_sql, pre_df[1].values.tolist())
                             # 定義リンク
                             cursor.executemany(
-                                def_sql, def_df.values.tolist())
-                            cursor.executemany(def_inter_sql, inter_def_df.values.tolist())
+                                def_sql, def_df[0].values.tolist())
+                            cursor.executemany(
+                                def_association_sql, def_df[1].values.tolist())
 
                             # データベース更新
                             connection.commit()
-                            
+
                             # プログレスバーを更新
                             bar.update(1)
 
