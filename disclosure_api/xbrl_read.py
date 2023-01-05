@@ -842,7 +842,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order', 'weight']]
 
         # リストが空の場合は例外処理
@@ -851,9 +851,6 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-
-        # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id': 'explain_id'})
 
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
@@ -976,7 +973,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order']]
 
         # リストが空の場合は例外処理
@@ -985,9 +982,6 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-
-        # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id': 'explain_id'})
 
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
@@ -1114,7 +1108,7 @@ class XbrlRead:
         add_df = add_df.drop_duplicates().reset_index()
 
         # 列を抽出する
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'order']]
 
         # リストが空の場合は例外処理
@@ -1123,9 +1117,6 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
-
-        # id → explain_id に変更します。
-        add_df = add_df.rename(columns={'id': 'explain_id'})
 
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
@@ -1144,128 +1135,136 @@ class XbrlRead:
         return add_df.drop(columns=['explain_id']), association_df
 
     def __to_link_association(self, link_df: DataFrame) -> DataFrame:
-        # 中間テーブル
-        association_df = self.xbrl_df.rename(columns={'id': 'order_id'}).merge(link_df.rename(
-            columns={'id': 'link_id'}), how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-        association_df['id'] = pd.Series(
-            str(uuid.uuid4()) for _ in range(len(association_df)))
-        association_df = association_df[['id', 'order_id', 'link_id']]
+        
+        # id列の名称変更
+        xbrl_df = self.xbrl_df.rename(columns={'id': 'item_id'})
+        link_df = link_df.rename(columns={'id': 'link_id'})
+        
+        # XBRL(DF)とリンク(DF)をマージ
+        association_df = xbrl_df.merge(link_df, how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
 
+        # 一意なIDを付与
+        association_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(association_df)))
+        
+        # カラムを並び替え
+        association_df = association_df[['id', 'item_id', 'link_id']]
+        
         return association_df
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
 
     # ************************************************************
     # データベース接続**********************************************
     # ************************************************************
     connection = pymysql.connect(host='localhost',
-                                 user='root',
-                                 password='kent6839',
-                                 database='pc_stock',
-                                 cursorclass=pymysql.cursors.DictCursor)
+                                user='root',
+                                password='kent6839',
+                                database='pc_stock',
+                                cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
+        with connection.cursor() as cursor:
 
-        # レコードを挿入
-        sql = """
-        INSERT IGNORE INTO xbrl_order 
-            (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
-            `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,
-            `unitref` ,`format`,`element`  ,`element_label`,`context` ,`numeric` ) 
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            # レコードを挿入
+            sql = """
+            INSERT IGNORE INTO xbrl_item 
+                (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
+                `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,
+                `unitref` ,`format`,`element`  ,`element_label`,`context` ,`numeric` ) 
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            explain_sql = """
+            INSERT IGNORE INTO xbrl_explain
+                (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
+                `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
-        explain_sql = """
-        INSERT IGNORE INTO xbrl_explain
-            (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
-            `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """
-        cal_sql = """
-        INSERT IGNORE INTO xbrl_cal_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """
-        pre_sql = """
-            INSERT IGNORE INTO xbrl_pre_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """
-        def_sql = """
-        INSERT IGNORE INTO xbrl_def_link 
-            (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """
-        cal_association_sql = """
-        INSERT IGNORE INTO xbrl_cal_association 
-            (`id`, `order_id`, `cal_id`) 
-            VALUES(%s,%s,%s)
-            """
-        pre_association_sql = """
-        INSERT IGNORE INTO xbrl_pre_association 
-            (`id`, `order_id`, `pre_id`) 
-            VALUES(%s,%s,%s)
-            """
-        def_association_sql = """
-        INSERT IGNORE INTO xbrl_def_association 
-            (`id`, `order_id`, `def_id`) 
-            VALUES(%s,%s,%s)
-            """
+            cal_sql = """
+            INSERT IGNORE INTO xbrl_cal_link 
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            pre_sql = """
+                INSERT IGNORE INTO xbrl_pre_link 
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            def_sql = """
+            INSERT IGNORE INTO xbrl_def_link 
+                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+                """
+            cal_association_sql = """
+            INSERT IGNORE INTO xbrl_cal_association 
+                (`id`, `item_id`, `cal_id`) 
+                VALUES(%s,%s,%s)
+                """
+            pre_association_sql = """
+            INSERT IGNORE INTO xbrl_pre_association 
+                (`id`, `item_id`, `pre_id`) 
+                VALUES(%s,%s,%s)
+                """
+            def_association_sql = """
+            INSERT IGNORE INTO xbrl_def_association 
+                (`id`, `item_id`, `def_id`) 
+                VALUES(%s,%s,%s)
+                """
 
-        # ************************************************************
-        # データ取得***************************************************
-        # ************************************************************
+            # ************************************************************
+            # データ取得***************************************************
+            # ************************************************************
 
-        start_date = date(2022, 10, 3)
+            start_date = date(2022, 10, 3)
 
-        end_date = date.today()
+            end_date = date.today()
 
-        while start_date <= end_date:
+            while start_date <= end_date:
 
-            zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
-            zip_list = list(zip_path.glob("**/*.zip"))
+                zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
+                zip_list = list(zip_path.glob("**/*.zip"))
 
-            if len(zip_list) > 0:
+                if len(zip_list) > 0:
 
-                # ダウンロードメッセージ
-                print(
-                    "\n************************************************************************************")
-                print(
-                    f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
-                print(
-                    "************************************************************************************\n")
-                # プログレスバーを設置
-                with tqdm(total=len(zip_list)) as bar:
+                    # ダウンロードメッセージ
+                    print(
+                        "\n************************************************************************************")
+                    print(
+                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
+                    print(
+                        "************************************************************************************\n")
+                    # プログレスバーを設置
+                    with tqdm(total=len(zip_list)) as bar:
 
-                    for zip_file in zip_list:
+                        for zip_file in zip_list:
+                            from time import time
+                            
+                            # XBRLの読み取り開始
+                            xr = XbrlRead(zip_file)
 
-                        # XBRLの読み取り開始
-                        xr = XbrlRead(zip_file)
+                            # ***************************
+                            # DataFrame取得
+                            # ***************************
 
-                        # ***************************
-                        # DataFrame取得
-                        # ***************************
+                            # 会社詳細
+                            explain_df = xr.company_explain_df()
 
-                        # 会社詳細
-                        explain_df = xr.company_explain_df()
+                            # 財務諸表
+                            label_df = xr.add_label_df()
+                            
+                            # 計算リンク
+                            cal_df = xr.to_cal_link_df()
 
-                        # 財務諸表
-                        label_df = xr.add_label_df()
+                            # 表示リンク
+                            pre_df = xr.to_pre_link_df()
 
-                        # 計算リンク
-                        cal_df = xr.to_cal_link_df()
-
-                        # 表示リンク
-                        pre_df = xr.to_pre_link_df()
-
-                        # 定義リンク
-                        def_df = xr.to_def_link_df()
-
-                        # *************************
-                        # テーブル更新
-                        # *************************
-                        with connection.cursor() as cursor:
-
+                            # 定義リンク
+                            def_df = xr.to_def_link_df()
+                            
+                            # *************************
+                            # テーブル更新
+                            # *************************
+                            
                             # 会社詳細
                             cursor.executemany(
                                 explain_sql, xr.company_explain_df().values.tolist())
@@ -1289,21 +1288,27 @@ if __name__ == "__main__":
 
                             # データベース更新
                             connection.commit()
-
+                            
                             # プログレスバーを更新
-                            bar.update(1)
+                            bar.update(1)     
+                                
+                            # ドキュメントフォルダを空にする
+                            import shutil
+                            
+                            taxdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),r'doc\taxonomy')
+                            shutil.rmtree(taxdir, ignore_errors=True)
 
-                # 終了メッセージ
-                print(f"\n     {len(zip_list)}件のデータをインポートしました。")
+                    # 終了メッセージ
+                    print(f"\n     {len(zip_list)}件のデータをインポートしました。")
 
-            else:
+                else:
 
-                # メッセージ
-                print(
-                    "\n************************************************************************************")
-                print(
-                    f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
-                print(
-                    "************************************************************************************\n")
+                    # メッセージ
+                    print(
+                        "\n************************************************************************************")
+                    print(
+                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
+                    print(
+                        "************************************************************************************\n")
 
-            start_date += timedelta(days=1)
+                start_date += timedelta(days=1)
