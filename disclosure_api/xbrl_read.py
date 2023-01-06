@@ -1142,12 +1142,9 @@ class XbrlRead:
         
         # XBRL(DF)とリンク(DF)をマージ
         association_df = xbrl_df.merge(link_df, how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-
-        # 一意なIDを付与
-        association_df['id'] = pd.Series(str(uuid.uuid4()) for _ in range(len(association_df)))
         
         # カラムを並び替え
-        association_df = association_df[['id', 'item_id', 'link_id']]
+        association_df = association_df[['link_id', 'item_id']]
         
         return association_df
 
@@ -1158,9 +1155,9 @@ if __name__ == "__main__":
     # データベース接続**********************************************
     # ************************************************************
     connection = pymysql.connect(host='localhost',
-                                user='root',
-                                password='kent6839',
-                                database='pc_stock',
+                                user='db_user',
+                                password='2OrmLErb',
+                                database='develop_pc_stock',
                                 cursorclass=pymysql.cursors.DictCursor)
 
     with connection:
@@ -1196,19 +1193,19 @@ if __name__ == "__main__":
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
                 """
             cal_association_sql = """
-            INSERT IGNORE INTO xbrl_cal_association 
-                (`id`, `item_id`, `cal_id`) 
-                VALUES(%s,%s,%s)
+            INSERT IGNORE INTO xbrl_cal_link_item_id 
+                (`xbrlcallink_id`, `xbrlitem_id`) 
+                VALUES(%s,%s)
                 """
             pre_association_sql = """
-            INSERT IGNORE INTO xbrl_pre_association 
-                (`id`, `item_id`, `pre_id`) 
-                VALUES(%s,%s,%s)
+            INSERT IGNORE INTO xbrl_pre_link_item_id 
+                (`xbrlprelink_id`, `xbrlitem_id`)
+                VALUES(%s,%s)
                 """
             def_association_sql = """
-            INSERT IGNORE INTO xbrl_def_association 
-                (`id`, `item_id`, `def_id`) 
-                VALUES(%s,%s,%s)
+            INSERT IGNORE INTO xbrl_def_link_item_id 
+                (`xbrldeflink_id`, `xbrlitem_id`) 
+                VALUES(%s,%s)
                 """
 
             # ************************************************************
@@ -1221,7 +1218,7 @@ if __name__ == "__main__":
 
             while start_date <= end_date:
 
-                zip_path = Path(f"D:/ZIP/{start_date.strftime('%Y%m%d')}/")
+                zip_path = Path(f"/home/kent2980/doc/tdnet/{start_date.strftime('%Y%m%d')}/")
                 zip_list = list(zip_path.glob("**/*.zip"))
 
                 if len(zip_list) > 0:
@@ -1291,12 +1288,6 @@ if __name__ == "__main__":
                             
                             # プログレスバーを更新
                             bar.update(1)     
-                                
-                            # ドキュメントフォルダを空にする
-                            import shutil
-                            
-                            taxdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),r'doc\taxonomy')
-                            shutil.rmtree(taxdir, ignore_errors=True)
 
                     # 終了メッセージ
                     print(f"\n     {len(zip_list)}件のデータをインポートしました。")
