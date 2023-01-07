@@ -13,7 +13,6 @@ from datetime import datetime
 import json
 import uuid
 
-
 class MyException(Exception):
     """自作例外クラスの基底クラス
 
