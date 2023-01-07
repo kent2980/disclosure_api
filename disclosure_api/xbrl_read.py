@@ -10,10 +10,7 @@ from pathlib import Path
 import os
 import requests
 from datetime import datetime
-import pymysql.cursors
 import json
-from tqdm import tqdm
-from datetime import date, timedelta
 import uuid
 
 
@@ -160,7 +157,7 @@ class XbrlRead:
         self.code = self.get_company_code()
 
         # ID(zipファイル名)を取得
-        self.id = os.path.split(os.path.basename(self.xbrl_zip_path))[0]
+        self.id = os.path.splitext(os.path.basename(self.xbrl_zip_path))[0]
         
         # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
@@ -523,12 +520,6 @@ class XbrlRead:
 
         # 重複業を削除
         master_df = master_df.drop_duplicates().reset_index()
-
-        # id → explain_id に変更します。
-        # master_df = master_df.rename(columns={'id':'explain_id'})
-
-        # 一意のIDを付与する
-        # master_df['id'] = pd.Series([str(uuid.uuid4()) for _ in range(len(master_df.values))])
 
         # カラムを並び替え
         master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
@@ -1147,159 +1138,3 @@ class XbrlRead:
         association_df = association_df[['link_id', 'item_id']]
         
         return association_df
-
-
-if __name__ == "__main__":  
-
-    # ************************************************************
-    # データベース接続**********************************************
-    # ************************************************************
-    connection = pymysql.connect(host='localhost',
-                                user='db_user',
-                                password='2OrmLErb',
-                                database='develop_pc_stock',
-                                cursorclass=pymysql.cursors.DictCursor)
-
-    with connection:
-        with connection.cursor() as cursor:
-
-            # レコードを挿入
-            sql = """
-            INSERT IGNORE INTO xbrl_item 
-                (`id`, `explain_id`, `reporting_date` ,`code`  ,`doc_element` ,`doc_label` ,`financial_statement` , 
-                `report_detail_cat` ,`start_date` ,`end_date` ,`instant_date` ,`namespace` ,
-                `unitref` ,`format`,`element`  ,`element_label`,`context` ,`numeric` ) 
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            explain_sql = """
-            INSERT IGNORE INTO xbrl_explain
-                (`id`, `reporting_date`, `code`, `period`, `period_division`, `period_division_label`, 
-                `consolidation_cat`, `consolidation_cat_label`, `report_cat`, `report_label`, `company_name`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """
-            cal_sql = """
-            INSERT IGNORE INTO xbrl_cal_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`, `weight`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            pre_sql = """
-                INSERT IGNORE INTO xbrl_pre_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            def_sql = """
-            INSERT IGNORE INTO xbrl_def_link 
-                (`id`, `reporting_date`, `code`, `doc_element`, `namespace`, `element`, `from_element`, `order`)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
-                """
-            cal_association_sql = """
-            INSERT IGNORE INTO xbrl_cal_link_item_id 
-                (`xbrlcallink_id`, `xbrlitem_id`) 
-                VALUES(%s,%s)
-                """
-            pre_association_sql = """
-            INSERT IGNORE INTO xbrl_pre_link_item_id 
-                (`xbrlprelink_id`, `xbrlitem_id`)
-                VALUES(%s,%s)
-                """
-            def_association_sql = """
-            INSERT IGNORE INTO xbrl_def_link_item_id 
-                (`xbrldeflink_id`, `xbrlitem_id`) 
-                VALUES(%s,%s)
-                """
-
-            # ************************************************************
-            # データ取得***************************************************
-            # ************************************************************
-
-            start_date = date(2022, 10, 3)
-
-            end_date = date.today()
-
-            while start_date <= end_date:
-
-                zip_path = Path(f"/home/kent2980/doc/tdnet/{start_date.strftime('%Y%m%d')}/")
-                zip_list = list(zip_path.glob("**/*.zip"))
-
-                if len(zip_list) > 0:
-
-                    # ダウンロードメッセージ
-                    print(
-                        "\n************************************************************************************")
-                    print(
-                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報をデータベースへのインポートします。")
-                    print(
-                        "************************************************************************************\n")
-                    # プログレスバーを設置
-                    with tqdm(total=len(zip_list)) as bar:
-
-                        for zip_file in zip_list:
-                            from time import time
-                            
-                            # XBRLの読み取り開始
-                            xr = XbrlRead(zip_file)
-
-                            # ***************************
-                            # DataFrame取得
-                            # ***************************
-
-                            # 会社詳細
-                            explain_df = xr.company_explain_df()
-
-                            # 財務諸表
-                            label_df = xr.add_label_df()
-                            
-                            # 計算リンク
-                            cal_df = xr.to_cal_link_df()
-
-                            # 表示リンク
-                            pre_df = xr.to_pre_link_df()
-
-                            # 定義リンク
-                            def_df = xr.to_def_link_df()
-                            
-                            # *************************
-                            # テーブル更新
-                            # *************************
-                            
-                            # 会社詳細
-                            cursor.executemany(
-                                explain_sql, xr.company_explain_df().values.tolist())
-                            # 財務諸表
-                            cursor.executemany(sql, label_df.values.tolist())
-                            # 計算リンク
-                            cursor.executemany(
-                                cal_sql, cal_df[0].values.tolist())
-                            cursor.executemany(
-                                cal_association_sql, cal_df[1].values.tolist())
-                            # 表示リンク
-                            cursor.executemany(
-                                pre_sql, pre_df[0].values.tolist())
-                            cursor.executemany(
-                                pre_association_sql, pre_df[1].values.tolist())
-                            # 定義リンク
-                            cursor.executemany(
-                                def_sql, def_df[0].values.tolist())
-                            cursor.executemany(
-                                def_association_sql, def_df[1].values.tolist())
-
-                            # データベース更新
-                            connection.commit()
-                            
-                            # プログレスバーを更新
-                            bar.update(1)     
-
-                    # 終了メッセージ
-                    print(f"\n     {len(zip_list)}件のデータをインポートしました。")
-
-                else:
-
-                    # メッセージ
-                    print(
-                        "\n************************************************************************************")
-                    print(
-                        f"     {start_date.strftime('%Y年%m月%d日')}公表の適時開示情報はありません。")
-                    print(
-                        "************************************************************************************\n")
-
-                start_date += timedelta(days=1)
