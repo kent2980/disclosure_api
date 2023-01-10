@@ -856,7 +856,7 @@ class XbrlRead:
 
         association_df = self.__to_link_association(add_df)
 
-        return add_df.drop(columns=['explain_id']), association_df
+        return add_df, association_df
 
     def to_def_link_df(self) -> tuple:
         """各ラベルに対応した定義リンク(DataFrame)を出力します。
@@ -987,7 +987,7 @@ class XbrlRead:
 
         association_df = self.__to_link_association(add_df)
 
-        return add_df.drop(columns=['explain_id']), association_df
+        return add_df, association_df
 
     def to_pre_link_df(self) -> tuple:
         """各ラベルに対応した表示リンク(DataFrame)を出力します。
@@ -1122,7 +1122,7 @@ class XbrlRead:
 
         association_df = self.__to_link_association(add_df)
 
-        return add_df.drop(columns=['explain_id']), association_df
+        return add_df, association_df
 
     def __to_link_association(self, link_df: DataFrame) -> DataFrame:
         
