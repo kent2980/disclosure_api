@@ -804,9 +804,6 @@ class XbrlRead:
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
 
-        # 重複する行を削除
-        add_df = add_df.drop_duplicates().reset_index()
-
         # ラベルを付与
         add_df = pd.merge(add_df, self.label_df, how='left', left_on=['namespace', 'from_element'], right_on=['namespace', 'element'])
         
@@ -823,6 +820,9 @@ class XbrlRead:
                 raise LinkListEmptyException(self.xbrl_zip_path)
         except LinkListEmptyException as identifier:
             print(identifier)
+
+        # 重複する行を削除
+        add_df = add_df.drop_duplicates().reset_index()
         
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
