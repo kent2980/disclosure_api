@@ -767,12 +767,12 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 親ラベル
-                            tag_dict['from_element'] = re.compile(
-                                comp).search(tag.get('xlink:from')).group()
+                            tag_dict['from_element'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
 
                             # 参照ラベル
-                            tag_dict['to_label'] = re.compile(
-                                comp).search(tag.get('xlink:to')).group()
+                            tag_dict['to_label'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
@@ -905,12 +905,12 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 親ラベル
-                            tag_dict['from_element'] = re.compile(
-                                l_com).search(tag.get('xlink:from')).group()
+                            tag_dict['from_element'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
 
                             # 参照ラベル
-                            tag_dict['to_label'] = re.compile(
-                                l_com).search(tag.get('xlink:to')).group()
+                            tag_dict['to_label'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
@@ -1043,12 +1043,12 @@ class XbrlRead:
                             l_com = "[A-Za-z0-9]+$"
 
                             # 親ラベル
-                            tag_dict['from_element'] = re.compile(
-                                l_com).search(tag.get('xlink:from')).group()
+                            tag_dict['from_element'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
 
                             # 参照ラベル
-                            tag_dict['to_label'] = re.compile(
-                                l_com).search(tag.get('xlink:to')).group()
+                            tag_dict['to_label'] = re.sub(
+                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
