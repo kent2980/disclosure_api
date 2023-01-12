@@ -750,9 +750,6 @@ class XbrlRead:
                             # 空の辞書
                             tag_dict = {}
 
-                            # 正規表現を定義
-                            comp = "[A-Za-z0-9]+$"
-
                             # *************************
                             # 要素を登録
                             # *************************
@@ -766,13 +763,16 @@ class XbrlRead:
                             tag_dict['namespace'] = re.sub(
                                 "_$|#", "", namespace)
 
+                            # 正規表現を定義
+                            l_com = -f"[a-zA-Z].+_cor_|{tag_dict['namespace']}"
+
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
+                                l_com, "", tag.get('xlink:from'))
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
+                                l_com, "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
@@ -888,9 +888,6 @@ class XbrlRead:
                             # 空の辞書
                             tag_dict = {}
 
-                            # 正規表現を定義
-                            l_com = "[A-Za-z0-9]+$"
-
                             # ******************************
                             # 要素を登録
                             # ******************************
@@ -904,13 +901,16 @@ class XbrlRead:
                             tag_dict['namespace'] = re.sub(
                                 "_$|#", "", namespace)
 
+                            # 正規表現を定義
+                            l_com = -f"[a-zA-Z].+_cor_|{tag_dict['namespace']}"
+
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
+                                l_com, "", tag.get('xlink:from'))
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
+                                l_com, "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
@@ -1040,15 +1040,15 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 正規表現を定義
-                            l_com = "[A-Za-z0-9]+$"
+                            l_com = -f"[a-zA-Z].+_cor_|{tag_dict['namespace']}"
 
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:from'))
+                                l_com, "", tag.get('xlink:from'))
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
-                                f"{tag_dict['namespace']}_", "", tag.get('xlink:to'))
+                                l_com, "", tag.get('xlink:to'))
 
                             # 順位
                             tag_dict['order'] = tag.get('order')
