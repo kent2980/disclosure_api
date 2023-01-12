@@ -808,7 +808,7 @@ class XbrlRead:
         add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
         
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
@@ -943,9 +943,9 @@ class XbrlRead:
 
         # ラベルを付与
         add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
-
+        
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
@@ -1084,9 +1084,9 @@ class XbrlRead:
 
         # ラベルを付与
         add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
-
+        
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
