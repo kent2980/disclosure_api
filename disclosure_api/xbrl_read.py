@@ -349,8 +349,6 @@ class XbrlRead:
 
         label_df = DataFrame(dict_list)
 
-        label_df.to_csv('/home/kent2980/python/ps1/disclosure_api/tests/label.csv')
-
         return label_df
 
     def get_company_code(self) -> str:
