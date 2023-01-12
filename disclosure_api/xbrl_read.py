@@ -161,6 +161,198 @@ class XbrlRead:
         # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
 
+        # ラベル(DataFrame)を取得
+        self.label_df =  self.__get_label_df()
+
+    def __get_label_df(self) -> DataFrame:
+        """報告書・財務情報に勘定ラベルを付与します
+
+        Args:
+            df (DataFrame): 報告書・財務情報
+
+        Returns:
+            DataFrame: 勘定ラベル付き（報告書・財務）情報
+        """
+
+        def load_global_label_xml() -> list:
+            """グローバルラベルファイルのローカルパスを出力します。
+
+            ローカルに存在しない場合は自動取得します。
+
+            Returns:
+                list: リンクファイル一覧
+            """
+
+            # 空のリスト
+            dict_list = []
+
+            # xsdファイルからスキーマ情報取得
+            labelLink = []
+            schemaLocation = []
+            with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
+                for info in zip_data.infolist():
+                    if re.compile("^.*xsd$").match(info.filename):
+
+                        # XMLをスクレイピング
+                        soup = bs(zip_data.read(info.filename), 'lxml')
+
+                        # labelLinkを取得
+                        all_link = soup.find_all(
+                            attrs={'xlink:role': 'http://www.xbrl.org/2003/role/labelLinkbaseRef'})
+                        for link in all_link:
+                            if re.compile("^.*lab.xml$").match(link.get('xlink:href')):
+                                # ラベルリンクをリストに追加
+                                labelLink.append(link.get('xlink:href'))
+
+                        # schemaLocationを取得
+                        tag_import = soup.find_all('xsd:import')
+                        for data in tag_import:
+                            schemaLocation.append(data.get('schemalocation'))
+
+            # labelLinkを保存
+            for link in labelLink:
+                # URLからパス部分を抽出
+                url_path = urlparse(link).path.replace('/', '\\')
+                # ローカルパスに変換
+                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
+                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
+                # ファイルの存在を問い合わせ
+                is_file = os.path.isfile(local_path)
+
+                # 存在しない場合、ローカルに保存x
+                try:
+                    if is_file == False:
+                        # リンクURLをリクエスト
+                        response = requests.get(link)
+                        # ディレクトリが存在しない場合新規作成
+                        local_dir = Path(local_path).parent
+                        if os.path.isdir(local_dir) == False:
+                            os.makedirs(local_dir, exist_ok=True)
+                        # ファイルの保存
+                        with open(local_path, 'wb') as saveFile:
+                            saveFile.write(response.content)
+                    dict_list.append(local_path)
+                except requests.exceptions.MissingSchema as identifier:
+                    pass
+
+            # schemaLocation
+            for link in schemaLocation:
+                # URLからパス部分を抽出
+                url_path = urlparse(link).path.replace('/', '\\')
+                # ローカルパスに変換
+                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
+                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
+                # ファイルの存在を問い合わせ
+                is_file = os.path.isfile(local_path)
+
+                # 存在しない場合、ローカルに保存
+                try:
+                    if is_file == False:
+                        # リンクURLをリクエスト
+                        response = requests.get(link)
+                        # ディレクトリが存在しない場合新規作成
+                        local_dir = Path(local_path).parent
+                        if os.path.isdir(local_dir) == False:
+                            os.makedirs(local_dir, exist_ok=True)
+                        # ファイルの保存
+                        with open(local_path, 'wb') as saveFile:
+                            saveFile.write(response.content)
+                    dict_list.append(local_path)
+                except requests.exceptions.MissingSchema as identifier:
+                    pass
+
+            return list(set(dict_list))
+
+        # 空のリスト
+        dict_list = []
+
+        # namespace毎にグループ化
+        group_df = self.xbrl_df.groupby('namespace')
+        for name, _ in group_df:
+
+            # *************************************************************
+            # グローバルラベルリンク ****************************************
+            # *************************************************************
+
+            # 名前空間を抽出
+            namespace = re.sub("_cor", "", name)
+
+            # タクソノミファイルを展開
+            for file in load_global_label_xml():
+
+                # 対象のタクソノミファイルで処理を行う
+                if re.compile(f".*{namespace}.*lab.xml$").match(str(file).replace("\\", "/")):
+
+                    # タクソノミファイルを開く
+                    with open(file, mode='r', encoding='utf-8') as data:
+
+                        # タクソノミファイル(xml)をスクレイピング
+
+                        soup = bs(data, 'lxml')
+                        # ラベルタグを全て抽出
+                        label_tag = soup.findAll(['link:label', 'label'])
+
+                        # タグを順番に処理
+                        for tag in label_tag:
+
+                            # 空の辞書
+                            tag_dict = {}
+                            # namespaceを登録
+                            tag_dict['namespace'] = name
+                            # elementを抽出
+                            tag_dict['element'] = re.sub(
+                                "^label_", "", tag.get('xlink:label'))
+                            # labelを抽出
+                            tag_dict['element_label'] = tag.text
+                            # リストに辞書を追加
+                            dict_list.append(tag_dict)
+
+            # **************************************************************
+            # ローカルラベルリンク *******************************************
+            # **************************************************************
+            if re.compile("tse-[a-z]{8}-[0-9]{5}").search(name):
+                with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
+
+                    file_info = list(zip_data.infolist())
+                    file_info.sort(key=lambda x: x.filename, reverse=True)
+                    for info in file_info:
+                        if re.compile("^.*lab.xml$").match(info.filename):
+
+                            # ローカルラベル(xml)をスクレイピング
+                            soup = bs(zip_data.read(info.filename), 'lxml')
+                            # link:label タグを抽出
+                            label_tag = soup.findAll(
+                                ['link:label', 'label'])
+                            # namespaceを取得
+                            namespace = re.compile(
+                                "tse-[a-z]{8}-[0-9]{5}").search(name).group()
+                            # タグを取り出す
+                            for tag in label_tag:
+
+                                # 空の辞書
+                                tag_dict = {}
+                                # namespaceを登録
+                                tag_dict['namespace'] = namespace
+                                # elementを抽出
+                                element = tag.get('xlink:label')
+                                element = re.sub("^label_", "", element)
+                                element = re.sub("_label$", "", element)
+                                element = re.sub(
+                                    f"{namespace}_", "", element)
+                                tag_dict['element'] = element
+                                # labelを抽出
+                                tag_dict['element_label'] = tag.text
+                                # リストに辞書を追加
+                                dict_list.append(tag_dict)
+
+                            break
+
+        label_df = DataFrame(dict_list)
+
+        label_df.to_csv('/home/kent2980/python/ps1/disclosure_api/tests/label.csv')
+
+        return label_df
+
     def get_company_code(self) -> str:
         """銘柄コードを取得します。
 
@@ -297,225 +489,11 @@ class XbrlRead:
             DataFrame: 勘定科目ラベル付き（報告書・財務）情報
         """
 
-        # ************************************************
-        # インナー関数 ************************************
-        # ************************************************
-
-        def load_global_label_xml() -> list:
-            """グローバルラベルファイルのローカルパスを出力します。
-
-            ローカルに存在しない場合は自動取得します。
-
-            Returns:
-                list: リンクファイル一覧
-            """
-
-            # 空のリスト
-            dict_list = []
-
-            # xsdファイルからスキーマ情報取得
-            labelLink = []
-            schemaLocation = []
-            with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
-                for info in zip_data.infolist():
-                    if re.compile("^.*xsd$").match(info.filename):
-
-                        # XMLをスクレイピング
-                        soup = bs(zip_data.read(info.filename), 'lxml')
-
-                        # labelLinkを取得
-                        all_link = soup.find_all(
-                            attrs={'xlink:role': 'http://www.xbrl.org/2003/role/labelLinkbaseRef'})
-                        for link in all_link:
-                            if re.compile("^.*lab.xml$").match(link.get('xlink:href')):
-                                # ラベルリンクをリストに追加
-                                labelLink.append(link.get('xlink:href'))
-
-                        # schemaLocationを取得
-                        tag_import = soup.find_all('xsd:import')
-                        for data in tag_import:
-                            schemaLocation.append(data.get('schemalocation'))
-
-            # labelLinkを保存
-            for link in labelLink:
-                # URLからパス部分を抽出
-                url_path = urlparse(link).path.replace('/', '\\')
-                # ローカルパスに変換
-                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
-                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
-                # ファイルの存在を問い合わせ
-                is_file = os.path.isfile(local_path)
-
-                # 存在しない場合、ローカルに保存x
-                try:
-                    if is_file == False:
-                        # リンクURLをリクエスト
-                        response = requests.get(link)
-                        # ディレクトリが存在しない場合新規作成
-                        local_dir = Path(local_path).parent
-                        if os.path.isdir(local_dir) == False:
-                            os.makedirs(local_dir, exist_ok=True)
-                        # ファイルの保存
-                        with open(local_path, 'wb') as saveFile:
-                            saveFile.write(response.content)
-                    dict_list.append(local_path)
-                except requests.exceptions.MissingSchema as identifier:
-                    pass
-
-            # schemaLocation
-            for link in schemaLocation:
-                # URLからパス部分を抽出
-                url_path = urlparse(link).path.replace('/', '\\')
-                # ローカルパスに変換
-                local_path = re.sub(r"\\", "/", os.path.join(os.path.abspath(
-                    os.path.dirname(__file__)) + '\\doc\\taxonomy' + url_path))
-                # ファイルの存在を問い合わせ
-                is_file = os.path.isfile(local_path)
-
-                # 存在しない場合、ローカルに保存
-                try:
-                    if is_file == False:
-                        # リンクURLをリクエスト
-                        response = requests.get(link)
-                        # ディレクトリが存在しない場合新規作成
-                        local_dir = Path(local_path).parent
-                        if os.path.isdir(local_dir) == False:
-                            os.makedirs(local_dir, exist_ok=True)
-                        # ファイルの保存
-                        with open(local_path, 'wb') as saveFile:
-                            saveFile.write(response.content)
-                    dict_list.append(local_path)
-                except requests.exceptions.MissingSchema as identifier:
-                    pass
-
-            return list(set(dict_list))
-
-        def add_label_link(df: DataFrame, global_label_xml: list) -> DataFrame:
-            """報告書・財務情報に勘定ラベルを付与します
-
-            Args:
-                df (DataFrame): 報告書・財務情報
-
-            Returns:
-                DataFrame: 勘定ラベル付き（報告書・財務）情報
-            """
-
-            # データ構造のみコピー
-            tag_df = df[:0]
-            tag_df['element_label'] = None
-
-            # namespace毎にグループ化
-            group_df = df.groupby('namespace')
-            for name, group in group_df:
-
-                # *************************************************************
-                # グローバルラベルリンク ****************************************
-                # *************************************************************
-
-                # タクソノミファイルを展開
-                for file in global_label_xml:
-                    # 名前空間を抽出
-                    namespace = re.sub("_cor", "", name)
-                    # 対象のタクソノミファイルで処理を行う
-                    if re.compile(f".*{namespace}.*lab.xml$").match(str(file).replace("\\", "/")):
-
-                        # 空のリスト
-                        tag_list = []
-
-                        # タクソノミファイルを開く
-                        with open(file, mode='r', encoding='utf-8') as data:
-
-                            # タクソノミファイル(xml)をスクレイピング
-                            soup = bs(data, 'lxml')
-                            # ラベルタグを全て抽出
-                            label_tag = soup.findAll(['link:label', 'label'])
-
-                            # タグを順番に処理
-                            for tag in label_tag:
-
-                                # 空の辞書
-                                tag_dict = {}
-                                # elementを抽出
-                                tag_dict['element'] = re.sub(
-                                    "^label_", "", tag.get('xlink:label'))
-                                # labelを抽出
-                                tag_dict['element_label'] = tag.text
-                                # リストに辞書を追加
-                                tag_list.append(tag_dict)
-
-                        # ラベルリストをDataFrameに変換
-                        global_label_df = DataFrame(tag_list)
-                        # グローラベルのnamespaceにラベルを付与
-                        group = pd.merge(group, global_label_df,
-                                         how='left', on='element')
-                        # マスタにラベル付きデータを追加
-                        tag_df = pd.concat([tag_df, group], axis=0)
-
-                # **************************************************************
-                # ローカルラベルリンク *******************************************
-                # **************************************************************
-                if re.compile("tse-[a-z]{8}-[0-9]{5}").search(name):
-                    with zipfile.ZipFile(self.xbrl_zip_path, mode='r') as zip_data:
-
-                        file_info = list(zip_data.infolist())
-                        file_info.sort(key=lambda x: x.filename, reverse=True)
-                        for info in file_info:
-                            if re.compile("^.*lab.xml$").match(info.filename):
-
-                                # 空のリスト
-                                tag_list = []
-                                # ローカルラベル(xml)をスクレイピング
-                                soup = bs(zip_data.read(info.filename), 'lxml')
-                                # link:label タグを抽出
-                                label_tag = soup.findAll(
-                                    ['link:label', 'label'])
-                                # namespaceを取得
-                                namespace = re.compile(
-                                    "tse-[a-z]{8}-[0-9]{5}").search(name).group()
-                                # タグを取り出す
-                                for tag in label_tag:
-
-                                    # 空の辞書
-                                    tag_dict = {}
-                                    # elementを抽出
-                                    element = tag.get('xlink:label')
-                                    element = re.sub("^label_", "", element)
-                                    element = re.sub("_label$", "", element)
-                                    element = re.sub(
-                                        f"{namespace}_", "", element)
-                                    tag_dict['element'] = element
-                                    # labelを抽出
-                                    tag_dict['element_label'] = tag.text
-                                    # リストに辞書を追加
-                                    tag_list.append(tag_dict)
-
-                                break
-
-                        # ラベルリストをDataFrameに変換
-                        local_label_df = DataFrame(tag_list)
-                        # ローカルのnamespaceにラベルを付与
-                        group = pd.merge(group, local_label_df,
-                                         how='left', on='element')
-                        # マスタにラベル付きデータを追加
-                        tag_df = pd.concat([tag_df, group], axis=0)
-
-            # すべての（財務諸表・報告書）とラベル情報を統合する
-            master_df = pd.merge(df, tag_df, how='left')
-
-            return master_df
-
-        # ************************************************
-        # ここから処理の記述を開始... **********************
-        # ************************************************
-
-        # グローバルラベルを読み込む
-        global_label_xml = load_global_label_xml()
-
         # XBRLを読み込む
         xbrl_df = self.xbrl_df
 
-        # 勘定ラベルを付与
-        master_df = add_label_link(xbrl_df, global_label_xml)
+        # ラベルを付与
+        master_df =  pd.merge(xbrl_df, self.label_df, how='left', on= ['namespace', 'element'])
 
         # 重複業を削除
         master_df = master_df.drop_duplicates().reset_index()
@@ -828,12 +806,15 @@ class XbrlRead:
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
 
-        # 重複する行を削除
-        add_df = add_df.drop_duplicates().reset_index()
+        # ラベルを付与
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['namespace', 'from_element'], right_on=['namespace', 'element'])
+        
+        # ラベルのカラム名を変更
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order', 'weight']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         # リストが空の場合は例外処理
         try:
@@ -842,13 +823,16 @@ class XbrlRead:
         except LinkListEmptyException as identifier:
             print(identifier)
 
+        # 重複する行を削除
+        add_df = add_df.drop_duplicates().reset_index()
+        
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order', 'weight']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         # *****************************
         # 中間テーブルを生成
@@ -959,12 +943,15 @@ class XbrlRead:
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
 
-        # 重複業を削除
-        add_df = add_df.drop_duplicates().reset_index()
+        # ラベルを付与
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['namespace', 'from_element'], right_on=['namespace', 'element'])
+
+        # ラベルのカラム名を変更
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
         try:
@@ -973,13 +960,16 @@ class XbrlRead:
         except LinkListEmptyException as identifier:
             print(identifier)
 
+        # 重複業を削除
+        add_df = add_df.drop_duplicates().reset_index()
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # *****************************
         # 中間テーブルを生成
@@ -1094,12 +1084,15 @@ class XbrlRead:
         # 欠損値をNoneに置換
         add_df = add_df.where(add_df.notnull(), None)
 
-        # 重複行を削除
-        add_df = add_df.drop_duplicates().reset_index()
+        # ラベルを付与
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['namespace', 'from_element'], right_on=['namespace', 'element'])
+
+        # ラベルのカラム名を変更
+        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
         try:
@@ -1108,13 +1101,16 @@ class XbrlRead:
         except LinkListEmptyException as identifier:
             print(identifier)
 
+        # 重複業を削除
+        add_df = add_df.drop_duplicates().reset_index()
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
         add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'order']]
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # *****************************
         # 中間テーブルを生成
