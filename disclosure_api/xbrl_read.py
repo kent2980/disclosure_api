@@ -764,7 +764,7 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 正規表現を定義
-                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z].+_[a-zA-Z]_[0-9]_"
+                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z0-9-].+_"
 
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
@@ -902,7 +902,7 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 正規表現を定義
-                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z].+_[a-zA-Z]_[0-9]_"
+                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z0-9-].+_"
 
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
@@ -1040,7 +1040,7 @@ class XbrlRead:
                                 "_$|#", "", namespace)
 
                             # 正規表現を定義
-                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z].+_[a-zA-Z]_[0-9]_"
+                            l_com = f"[a-zA-Z].+_cor_|{tag_dict['namespace']}|[a-zA-Z0-9-].+_"
 
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
