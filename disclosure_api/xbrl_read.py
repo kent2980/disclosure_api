@@ -769,6 +769,7 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
+                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
@@ -907,6 +908,7 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
+                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
@@ -1045,6 +1047,7 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
+                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
