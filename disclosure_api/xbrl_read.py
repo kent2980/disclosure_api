@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import uuid
 
+
 class MyException(Exception):
     """自作例外クラスの基底クラス
 
@@ -157,12 +158,12 @@ class XbrlRead:
 
         # ID(zipファイル名)を取得
         self.id = os.path.splitext(os.path.basename(self.xbrl_zip_path))[0]
-        
+
         # XBRLからデータフレームを取得
         self.xbrl_df = self.to_dataframe()
 
         # ラベル(DataFrame)を取得
-        self.label_df =  self.__get_label_df()
+        self.label_df = self.__get_label_df()
 
     def __get_label_df(self) -> DataFrame:
         """報告書・財務情報に勘定ラベルを付与します
@@ -491,13 +492,15 @@ class XbrlRead:
         xbrl_df = self.xbrl_df
 
         # ラベルを付与
-        master_df =  pd.merge(xbrl_df, self.label_df, how='left', on= ['namespace', 'element'])
+        master_df = pd.merge(xbrl_df, self.label_df, how='left', on=[
+                             'namespace', 'element'])
 
         # 重複業を削除
         master_df = master_df.drop_duplicates().reset_index()
 
         # カラムを並び替え
-        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat', 'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
+        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
+                               'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
 
         return master_df
 
@@ -553,7 +556,7 @@ class XbrlRead:
         # 辞書のキーを定義する
         dict_columns = ['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
-                        'namespace',  'unitref', 'format','element', 'context', 'numeric']
+                        'namespace',  'unitref', 'format', 'element', 'context', 'numeric']
 
         # DataFrameの変数
         df = pd.DataFrame(columns=dict_columns)
@@ -769,7 +772,8 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
-                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
+                            tag_dict['from_element'] = re.sub(
+                                r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
@@ -806,10 +810,12 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # ラベルを付与
-        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
-        
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=[
+                          'from_element'], right_on=['element'])
+
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
+        add_df = add_df.rename(columns={
+                               'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
@@ -824,13 +830,13 @@ class XbrlRead:
 
         # 重複する行を削除
         add_df = add_df.drop_duplicates().reset_index()
-        
+
         # 一意のIDを付与する
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         # *****************************
@@ -908,7 +914,8 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
-                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
+                            tag_dict['from_element'] = re.sub(
+                                r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
@@ -944,10 +951,12 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # ラベルを付与
-        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
-        
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=[
+                          'from_element'], right_on=['element'])
+
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
+        add_df = add_df.rename(columns={
+                               'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
@@ -968,7 +977,7 @@ class XbrlRead:
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # *****************************
@@ -1047,7 +1056,8 @@ class XbrlRead:
                             # 親ラベル
                             tag_dict['from_element'] = re.sub(
                                 l_com, "", tag.get('xlink:from'))
-                            tag_dict['from_element'] = re.sub(r"_[0-9]$", "", tag_dict['from_element'])
+                            tag_dict['from_element'] = re.sub(
+                                r"_[0-9]$", "", tag_dict['from_element'])
 
                             # 参照ラベル
                             tag_dict['to_label'] = re.sub(
@@ -1086,10 +1096,12 @@ class XbrlRead:
         add_df = add_df.where(add_df.notnull(), None)
 
         # ラベルを付与
-        add_df = pd.merge(add_df, self.label_df, how='left', left_on=['from_element'], right_on=['element'])
-        
+        add_df = pd.merge(add_df, self.label_df, how='left', left_on=[
+                          'from_element'], right_on=['element'])
+
         # ラベルのカラム名を変更
-        add_df = add_df.rename(columns={'element_label':'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
+        add_df = add_df.rename(columns={
+                               'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
         add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
@@ -1110,7 +1122,7 @@ class XbrlRead:
                                   for _ in range(len(add_df))])
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # *****************************
@@ -1122,15 +1134,16 @@ class XbrlRead:
         return add_df, association_df
 
     def __to_link_association(self, link_df: DataFrame) -> DataFrame:
-        
+
         # id列の名称変更
         xbrl_df = self.xbrl_df.rename(columns={'id': 'item_id'})
         link_df = link_df.rename(columns={'id': 'link_id'})
-        
+
         # XBRL(DF)とリンク(DF)をマージ
-        association_df = xbrl_df.merge(link_df, how='right', on=['explain_id', 'doc_element', 'namespace', 'element'])
-        
+        association_df = xbrl_df.merge(link_df, how='right', on=[
+                                       'explain_id', 'doc_element', 'namespace', 'element'])
+
         # カラムを並び替え
         association_df = association_df[['link_id', 'item_id']]
-        
+
         return association_df
