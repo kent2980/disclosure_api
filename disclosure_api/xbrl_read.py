@@ -835,15 +835,15 @@ class XbrlRead:
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
-        # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
-
         # *****************************
         # 中間テーブルを生成
         # *****************************
 
         association_df = self.__to_link_association(add_df)
+
+        # カラムの順番を変更
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         return add_df, association_df
 
@@ -976,15 +976,15 @@ class XbrlRead:
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
-        # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
-
         # *****************************
         # 中間テーブルを生成
         # *****************************
 
         association_df = self.__to_link_association(add_df)
+        
+        # カラムの順番を変更
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         return add_df, association_df
 
@@ -1121,16 +1121,15 @@ class XbrlRead:
         add_df['id'] = pd.Series([str(uuid.uuid4())
                                   for _ in range(len(add_df))])
 
-        # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
-                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
-
         # *****************************
         # 中間テーブルを生成
         # *****************************
 
         association_df = self.__to_link_association(add_df)
 
+        # カラムの順番を変更
+        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+                         'namespace', 'element', 'from_element', 'from_element_label', 'order']]
         return add_df, association_df
 
     def __to_link_association(self, link_df: DataFrame) -> DataFrame:
