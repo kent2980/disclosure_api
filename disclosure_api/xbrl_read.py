@@ -1143,6 +1143,6 @@ class XbrlRead:
                                        'explain_id', 'doc_element', 'namespace', 'element'])
 
         # カラムを並び替え
-        association_df = association_df[['link_id', 'item_id']]
+        association_df = association_df[['item_id', 'link_id']]
 
         return association_df
