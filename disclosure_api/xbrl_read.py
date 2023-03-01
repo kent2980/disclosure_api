@@ -382,7 +382,7 @@ class XbrlRead:
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
             ['id', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
-             'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
+             'consolidation_cat_label', 'report_cat', 'report_label', 'name', 'title'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
@@ -426,6 +426,12 @@ class XbrlRead:
                         tag_dict['reporting_date'] = datetime.strptime(
                             date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
+                    # 報告書タイトル
+                    if tag_dict['title'] is None:
+                        document_title = soup.find('ix:nonnumeric', attrs={'name': re.compile(
+                            '^.*DocumentName')})
+                        tag_dict['title'] = document_title.text if document_title is not None else None
+                    
                     # 会社名
                     if tag_dict['name'] is None:
                         company_name = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
