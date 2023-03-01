@@ -381,8 +381,8 @@ class XbrlRead:
 
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
-            ['id', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
-             'consolidation_cat_label', 'report_cat', 'report_label', 'name', 'title'], None)
+            ['id' , 'title', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
+             'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
