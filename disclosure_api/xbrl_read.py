@@ -12,6 +12,7 @@ import requests
 from datetime import datetime
 import json
 import uuid
+import jaconv
 
 
 class MyException(Exception):
@@ -430,12 +431,14 @@ class XbrlRead:
                     if tag_dict['title'] is None:
                         document_title = soup.find('ix:nonnumeric', attrs={'name': re.compile(
                             '^.*DocumentName')})
+                        document_title = jaconv.normalize(document_title)
                         tag_dict['title'] = document_title.text if document_title is not None else None
                     
                     # 会社名
                     if tag_dict['name'] is None:
                         company_name = soup.find('ix:nonnumeric', attrs={'name': [re.compile(
                             '^.*CompanyName'), re.compile('^.*AssetManagerREIT'), re.compile('FilerNameInJapaneseDEI')]})
+                        company_name = jaconv.normalize(company_name)
                         tag_dict['name'] = company_name.text if company_name is not None else None
 
                     # 銘柄コード
