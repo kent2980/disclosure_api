@@ -508,8 +508,9 @@ class XbrlRead:
         # カラムを並び替え
         master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
                                'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric', 'decimals', 'scale']]
-
+        master_df.to_csv('test.csv')
         return master_df
+    
 
     def to_dataframe(self) -> DataFrame:
         """報告書と財務情報を出力します。
