@@ -681,8 +681,8 @@ class XbrlRead:
                             dict_tag['element'] = tag_element
                             dict_tag['context'] = tag_contextref
                             dict_tag['unitref'] = tag.get('unitref')
-                            dict_tag['decimals'] = tag.get('decimals')
-                            dict_tag['scale'] = tag.get('scale')
+                            dict_tag['decimals'] = int(tag.get('decimals'))
+                            dict_tag['scale'] = int(tag.get('scale'))
 
                             if len(tag.contents) != 0:
                                 dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
