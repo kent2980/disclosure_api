@@ -507,7 +507,7 @@ class XbrlRead:
 
         # カラムを並び替え
         master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
-                               'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
+                               'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric', 'decimals', 'scale']]
 
         return master_df
 
@@ -563,7 +563,7 @@ class XbrlRead:
         # 辞書のキーを定義する
         dict_columns = ['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
-                        'namespace',  'unitref', 'format', 'element', 'context', 'numeric']
+                        'namespace',  'unitref', 'format', 'element', 'context', 'numeric', 'decimals', 'scale']
 
         # DataFrameの変数
         df = pd.DataFrame(columns=dict_columns)
@@ -681,17 +681,16 @@ class XbrlRead:
                             dict_tag['element'] = tag_element
                             dict_tag['context'] = tag_contextref
                             dict_tag['unitref'] = tag.get('unitref')
+                            dict_tag['decimals'] = tag.get('decimals')
+                            dict_tag['scale'] = tag.get('scale')
 
                             if len(tag.contents) != 0:
-                                dict_tag['format'] = re.sub(
-                                    "^.*:", "", tag.get('format'))
-                                dict_tag['numeric'] = Decimal(
-                                    re.sub(r"\D", "", tag.contents[0])) * 10 ** Decimal(tag.get('scale'))
+                                dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
+                                dict_tag['numeric'] = Decimal(re.sub(r"\D", "", tag.contents[0]))
 
                                 # 数値がマイナスの場合
                                 if tag.get('sign') == '-':
-                                    dict_tag['numeric'] = - \
-                                        1 * dict_tag['numeric']
+                                    dict_tag['numeric'] = -1 * dict_tag['numeric']
 
                             # 辞書をリストに追加
                             list_dict.append(dict_tag)
