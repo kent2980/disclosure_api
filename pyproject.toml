@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "disclosure-api"
-version = "1.0.26"
+version = "1.0.27"
 description = "timery disclosure download API"
 authors = ["kent <kent2980@gmail.com>"]
 readme = "README.md"
