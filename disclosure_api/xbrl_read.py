@@ -691,7 +691,7 @@ class XbrlRead:
 
                                 # 数値がマイナスの場合
                                 if tag.get('sign') == '-':
-                                    dict_tag['numeric'] = -1 * dict_tag['numeric']
+                                    dict_tag['numeric'] = - dict_tag['numeric']
 
                             # 辞書をリストに追加
                             list_dict.append(dict_tag)
