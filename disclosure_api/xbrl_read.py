@@ -687,15 +687,17 @@ class XbrlRead:
 
                             if len(tag.contents) != 0:
                                 dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
-                                dict_tag['numeric'] = Decimal(re.sub(r",", "", tag.contents[0]))
-                                if "." in tag.contents[0]:
-                                    dict_tag['numeric'] = Decimal(tag.contents[0])
+                                numeric = re.sub(r",", "", tag.contents[0])
+                                if "." in numeric:
+                                    numeric = Decimal(numeric)
                                 else:
-                                    dict_tag['numeric'] = Decimal(re.sub(r"\D", "", tag.contents[0]))
+                                    numeric = Decimal(re.sub(r"\D", "", numeric))
 
                                 # 数値がマイナスの場合
                                 if tag.get('sign') == '-':
-                                    dict_tag['numeric'] = - dict_tag['numeric']
+                                    numeric = - numeric
+                                    
+                                dict_tag['numeric'] = numeric
 
                             # 辞書をリストに追加
                             list_dict.append(dict_tag)
