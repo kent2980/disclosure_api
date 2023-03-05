@@ -1,3 +1,17 @@
+    """このプログラムは >> pip install git+https://github.com/kent2980/disclosure_api.git
+    からインストールできます。
+
+    Raises:
+        NoneXbrlZipPathSetting: _description_
+        XbrlValueNoneException: _description_
+        LinkListEmptyException: _description_
+        LinkListEmptyException: _description_
+        LinkListEmptyException: _description_
+
+    Returns:
+        _type_: _description_
+    """
+
 from bs4 import BeautifulSoup as bs
 from pandas import DataFrame
 import pandas as pd
