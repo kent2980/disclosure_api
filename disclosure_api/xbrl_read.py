@@ -688,13 +688,10 @@ class XbrlRead:
                             if len(tag.contents) != 0:
                                 dict_tag['numeric'] = 0
                                 dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
-                                if "," in tag.contents[0]:
-                                    dict_tag['numeric'] = Decimal(re.sub(r"\D", "", tag.contents[0]))
+                                if "." in tag.contents[0]:
+                                    dict_tag['numeric'] = Decimal(tag.contents[0])
                                 else:
-                                    try:
-                                        dict_tag['numeric'] = Decimal(tag.contents[0])
-                                    except InvalidOperation:
-                                        print(tag.contents[0])
+                                    dict_tag['numeric'] = Decimal(re.sub(r"\D", "", tag.contents[0]))
 
                                 # 数値がマイナスの場合
                                 if tag.get('sign') == '-':
