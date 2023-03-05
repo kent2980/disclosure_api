@@ -686,8 +686,8 @@ class XbrlRead:
                             dict_tag['scale'] = int(tag.get('scale'))
 
                             if len(tag.contents) != 0:
-                                dict_tag['numeric'] = 0
                                 dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
+                                dict_tag['numeric'] = Decimal(re.sub(r",", "", tag.contents[0]))
                                 if "." in tag.contents[0]:
                                     dict_tag['numeric'] = Decimal(tag.contents[0])
                                 else:
