@@ -37,7 +37,7 @@ def format_date(date_str):
     """
     try:
         # "令和4年10月3日"のフォーマット
-        date_obj = datetime.strptime(date_str, '%s%d年%m月%d日' % ('令和', '%Y', '%m', '%d'))
+        date_obj = datetime.strptime(date_str, '%s%d年%d月%d日' % ('令和', '%Y', '%m', '%d'))
     except ValueError:
         try:
             # "YYYY年MM月DD日"のフォーマット
