@@ -14,6 +14,38 @@ import json
 import uuid
 import jaconv
 
+def format_date(date_str):
+    """
+    日付文字列を受け取り、統一的なフォーマット 'YYYY-MM-DD' に変換する。
+
+    Args:
+        date_str (str): "令和4年10月3日"、"2023年10月3日"、"2023-10-3" のいずれかの形式の日付文字列。
+
+    Returns:
+        str: 'YYYY-MM-DD' 形式の日付文字列。
+
+    Raises:
+        ValueError: 引数がサポートされていない形式の日付文字列の場合。
+
+    Examples:
+        >>> format_date('令和4年10月3日')
+        '2022-10-03'
+        >>> format_date('2023年10月3日')
+        '2023-10-03'
+        >>> format_date('2023-10-3')
+        '2023-10-03'
+    """
+    try:
+        # "令和4年10月3日"のフォーマット
+        date_obj = datetime.datetime.strptime(date_str, '%s%d年%m月%d日' % ('令和', '%Y', '%m', '%d'))
+    except ValueError:
+        try:
+            # "YYYY年MM月DD日"のフォーマット
+            date_obj = datetime.datetime.strptime(date_str, '%Y年%m月%d日')
+        except ValueError:
+            # "YYYY-MM-DD"のフォーマット
+            date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+    return date_obj.strftime('%Y-%m-%d')
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
@@ -381,8 +413,7 @@ class XbrlRead:
                     if tag_dict['publication_date'] is None:
                         date_str = re.compile(
                             "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
-                        tag_dict['publication_date'] = datetime.strptime(
-                            date_str, "%Y%m%d").strftime("%Y-%m-%d")
+                        tag_dict['publication_date'] = fotmat_date(date_str)
 
                     # 報告書タイトル
                     if tag_dict['title'] is None:
@@ -396,7 +427,7 @@ class XbrlRead:
                             '^.*FilingDate')})
                         if filing_date is not None:
                             filing_date = jaconv.normalize(filing_date.text)
-                            tag_dict['filing_date'] = datetime.strptime(filing_date, "%Y年%m月%d日").strftime("%Y-%m-%d")
+                            tag_dict['filing_date'] = format_date(filing_date)
                     
                     # 会社名
                     if tag_dict['name'] is None:
