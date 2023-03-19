@@ -393,7 +393,7 @@ class XbrlRead:
                     # 提出日
                     if tag_dict['filing_date'] is None:
                         filing_date = soup.find('ix:nonnumeric', attrs={'name': re.compile(
-                            '^.*filing_date')})
+                            '^.*FilingDate')})
                         if filing_date is not None:
                             filing_date = jaconv.normalize(filing_date.text)
                             tag_dict['filing_date'] = datetime.strptime(filing_date, "%Y年%m月%d日").strftime("%Y-%m-%d")
