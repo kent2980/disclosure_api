@@ -3,7 +3,7 @@ from pandas import DataFrame
 import pandas as pd
 import re
 import zipfile
-from decimal import Decimal
+from decimal import Decimal,InvalidOperation
 import warnings
 from urllib.parse import urlparse
 from pathlib import Path
@@ -514,10 +514,11 @@ class XbrlRead:
         master_df = master_df.drop_duplicates().reset_index()
 
         # カラムを並び替え
-        master_df = master_df[['id', 'explain_id', 'publication_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
-                               'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
+        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
+                               'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric', 'decimals', 'scale']]
 
         return master_df
+    
 
     def to_dataframe(self) -> DataFrame:
         """報告書と財務情報を出力します。
@@ -571,7 +572,7 @@ class XbrlRead:
         # 辞書のキーを定義する
         dict_columns = ['id', 'explain_id', 'publication_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
-                        'namespace',  'unitref', 'format', 'element', 'context', 'numeric']
+                        'namespace',  'unitref', 'format', 'element', 'context', 'numeric', 'decimals', 'scale']
 
         # DataFrameの変数
         df = pd.DataFrame(columns=dict_columns)
@@ -689,17 +690,22 @@ class XbrlRead:
                             dict_tag['element'] = tag_element
                             dict_tag['context'] = tag_contextref
                             dict_tag['unitref'] = tag.get('unitref')
+                            dict_tag['decimals'] = int(tag.get('decimals'))
+                            dict_tag['scale'] = int(tag.get('scale'))
 
                             if len(tag.contents) != 0:
-                                dict_tag['format'] = re.sub(
-                                    "^.*:", "", tag.get('format'))
-                                dict_tag['numeric'] = Decimal(
-                                    re.sub(r"\D", "", tag.contents[0])) * 10 ** Decimal(tag.get('scale'))
+                                dict_tag['format'] = re.sub("^.*:", "", tag.get('format'))
+                                numeric = re.sub(r",", "", tag.contents[0])
+                                if "." in numeric:
+                                    numeric = Decimal(numeric)
+                                else:
+                                    numeric = Decimal(re.sub(r"\D", "", numeric))
 
                                 # 数値がマイナスの場合
                                 if tag.get('sign') == '-':
-                                    dict_tag['numeric'] = - \
-                                        1 * dict_tag['numeric']
+                                    numeric = - numeric
+                                    
+                                dict_tag['numeric'] = numeric
 
                             # 辞書をリストに追加
                             list_dict.append(dict_tag)
