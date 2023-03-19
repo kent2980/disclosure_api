@@ -17,7 +17,6 @@ import jaconv
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
-
     Args:
         Exception (_type_): エラーメッセージ
     """
@@ -28,7 +27,6 @@ class MyException(Exception):
 
 class XbrlValueNoneException(MyException):
     """参照したXBRLタグが存在しない場合に発生する例外
-
     Args:
         MyException (_type_): 自作例外クラス
     """
@@ -42,7 +40,6 @@ class XbrlValueNoneException(MyException):
 
 class NoneXbrlZipPathSetting(Exception):
     """ZIPファイルのパスが未設定の場合に発生する例外
-
     Args:
         Exception (_type_): 例外基底クラス
     """
@@ -62,82 +59,48 @@ class LinkListEmptyException(MyException):
 
 class XbrlRead:
     """TDNETより配信されたXBRLの読み込み機能を提供します。
-
     XBRLのZIPファイルのパスを設定してください。
-
     Args:
         xbrl_zip_path (str, optional): ZIP(XBRL) ファイルパス
-
     Raises:
         NoneXbrlZipPathSetting: パス未設定エラー
-
     Examples:
-
         初期化：TDNETからダウンロードしたZIPファイルのパスを読み込んでください。
-
         >>> zip_path = " ***/***/********.zip"
             x = XbrlRead(zip_path)
-
         (a) XBRLのDataFrameを出力
-
         >>> xbrl_df = x.to_dataframe()
-
         (b) XBRLの勘定科目ラベル付きDataFrameを出力
-
         >>> xbrl_df = x.add_label_df()
-
         (c) XBRLの計算リンクを出力 -> DataFrame
-
         >>> cal_df = x.to_cal_link_df()
-
         (d) XBRLの定義リンクを出力 -> DataFrame
-
         >>> def_df = x.to_def_link_df()
-
         (e) XBRLの表示リンクを出力 -> DataFrame
-
         >>> pre_df = x.to_pre_link_df()
-
     """
 
     def __init__(self, xbrl_zip_path: str = None) -> None:
         """TDNETより配信されたXBRLの読み込み機能を提供します。
-
         XBRLのZIPファイルのパスを設定してください。
-
         Args:
             xbrl_zip_path (str, optional): ZIP(XBRL) ファイルパス
-
         Raises:
             NoneXbrlZipPathSetting: パス未設定エラー
-
         Examples:
-
             初期化：TDNETからダウンロードしたZIPファイルのパスを読み込んでください。
-
             >>> zip_path = " ***/***/********.zip"
                 x = XbrlRead(zip_path)
-
             (a) XBRLのDataFrameを出力
-
             >>> xbrl_df = x.to_dataframe()
-
             (b) XBRLの勘定科目ラベル付きDataFrameを出力
-
             >>> xbrl_df = x.add_label_df()
-
             (c) XBRLの計算リンクを出力 -> DataFrame
-
             >>> cal_df = x.to_cal_link_df()
-
             (d) XBRLの定義リンクを出力 -> DataFrame
-
             >>> def_df = x.to_def_link_df()
-
             (e) XBRLの表示リンクを出力 -> DataFrame
-
             >>> pre_df = x.to_pre_link_df()
-
         """
 
         # ZIPファイルのパスが未設定の場合に例外発生
@@ -151,7 +114,7 @@ class XbrlRead:
         self.xbrl_zip_path = xbrl_zip_path
 
         # 報告日を取得
-        self.reporting_date = datetime.strptime(re.compile(
+        self.publication_date = datetime.strptime(re.compile(
             "[0-9]{8}").search(os.path.dirname(xbrl_zip_path).__str__()).group(), "%Y%m%d")
 
         # 銘柄コードを取得
@@ -168,19 +131,15 @@ class XbrlRead:
 
     def __get_label_df(self) -> DataFrame:
         """報告書・財務情報に勘定ラベルを付与します
-
         Args:
             df (DataFrame): 報告書・財務情報
-
         Returns:
             DataFrame: 勘定ラベル付き（報告書・財務）情報
         """
 
         def load_global_label_xml() -> list:
             """グローバルラベルファイルのローカルパスを出力します。
-
             ローカルに存在しない場合は自動取得します。
-
             Returns:
                 list: リンクファイル一覧
             """
@@ -355,7 +314,6 @@ class XbrlRead:
 
     def get_company_code(self) -> str:
         """銘柄コードを取得します。
-
         Returns:
             str: 銘柄コード
         """
@@ -372,7 +330,6 @@ class XbrlRead:
 
     def company_explain_df(self) -> DataFrame:
         """会社の固有情報を出力します。
-
         Returns:
             dict: 会社固有情報
         """
@@ -382,7 +339,7 @@ class XbrlRead:
 
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
-            ['id' , 'title', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
+            ['id' , 'title', 'filing_date', 'publication_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
              'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
 
         # Zipファイルを展開する
@@ -420,11 +377,11 @@ class XbrlRead:
                     # BeautifulSoupでスクレイピング
                     soup = bs(zip_data.read(info.filename), 'lxml')
 
-                    # 提出日
-                    if tag_dict['reporting_date'] is None:
+                    # 公表日
+                    if tag_dict['publication_date'] is None:
                         date_str = re.compile(
                             "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
-                        tag_dict['reporting_date'] = datetime.strptime(
+                        tag_dict['publication_date'] = datetime.strptime(
                             date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
                     # 報告書タイトル
@@ -432,6 +389,14 @@ class XbrlRead:
                         document_title = soup.find('ix:nonnumeric', attrs={'name': re.compile(
                             '^.*DocumentName')})
                         tag_dict['title'] = jaconv.normalize(document_title.text) if document_title is not None else None
+
+                    # 提出日
+                    if tag_dict['filing_date'] is None:
+                        filing_date = soup.find('ix:nonnumeric', attrs={'name': re.compile(
+                            '^.*filing_date')})
+                        if filing_date is not None:
+                            filing_date = jaconv.normalize(filing_date.text)
+                            tag_dict['filing_date'] = datetime.strptime(filing_date, "%Y年%m月%d日").strftime("%Y-%m-%d")
                     
                     # 会社名
                     if tag_dict['name'] is None:
@@ -490,7 +455,6 @@ class XbrlRead:
 
     def add_label_df(self) -> DataFrame:
         """勘定科目ラベルを付与した報告書・財務諸表のDataFrameを出力します。
-
         Returns:
             DataFrame: 勘定科目ラベル付き（報告書・財務）情報
         """
@@ -514,14 +478,12 @@ class XbrlRead:
 
     def to_dataframe(self) -> DataFrame:
         """報告書と財務情報を出力します。
-
         Returns:
             DataFrame: 報告書・財務情報
         """
 
         def context_date_df() -> DataFrame:
             """各コンテキストの期間データ一覧を出力します。
-
             Returns:
                 DataFrame: 期間データ一覧
             """
@@ -562,7 +524,7 @@ class XbrlRead:
             return df
 
         # 辞書のキーを定義する
-        dict_columns = ['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
+        dict_columns = ['id', 'explain_id', 'publication_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
                         'namespace',  'unitref', 'format', 'element', 'context', 'numeric', 'decimals', 'scale']
 
@@ -618,7 +580,7 @@ class XbrlRead:
                             dict_tag['explain_id'] = self.id
 
                             # 報告日を登録
-                            dict_tag['reporting_date'] = self.reporting_date
+                            dict_tag['publication_date'] = self.publication_date
 
                             # 銘柄コードを登録
                             dict_tag['code'] = self.code
@@ -719,7 +681,6 @@ class XbrlRead:
 
     def to_cal_link_df(self) -> tuple:
         """各ラベルに対応した計算リンク(DataFrame)を出力します。
-
         Returns:
             DataFrame: 計算リンク
         """
@@ -831,7 +792,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         # リストが空の場合は例外処理
@@ -855,14 +816,13 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         return add_df, association_df
 
     def to_def_link_df(self) -> tuple:
         """各ラベルに対応した定義リンク(DataFrame)を出力します。
-
         Returns:
             DataFrame: 定義リンク
         """
@@ -972,7 +932,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -996,14 +956,13 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
         
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         return add_df, association_df
 
     def to_pre_link_df(self) -> tuple:
         """各ラベルに対応した表示リンク(DataFrame)を出力します。
-
         Returns:
             DataFrame: 表示リンク
         """
@@ -1117,7 +1076,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -1141,7 +1100,7 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
         return add_df, association_df
 
