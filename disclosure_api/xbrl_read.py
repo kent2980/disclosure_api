@@ -151,7 +151,7 @@ class XbrlRead:
         self.xbrl_zip_path = xbrl_zip_path
 
         # 報告日を取得
-        self.reporting_date = datetime.strptime(re.compile(
+        self.publication_date = datetime.strptime(re.compile(
             "[0-9]{8}").search(os.path.dirname(xbrl_zip_path).__str__()).group(), "%Y%m%d")
 
         # 銘柄コードを取得
@@ -382,7 +382,7 @@ class XbrlRead:
 
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
-            ['id' , 'title', 'reporting_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
+            ['id' , 'title', 'filing_date', 'publication_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
              'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
 
         # Zipファイルを展開する
@@ -420,11 +420,11 @@ class XbrlRead:
                     # BeautifulSoupでスクレイピング
                     soup = bs(zip_data.read(info.filename), 'lxml')
 
-                    # 提出日
-                    if tag_dict['reporting_date'] is None:
+                    # 公表日
+                    if tag_dict['publication_date'] is None:
                         date_str = re.compile(
                             "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
-                        tag_dict['reporting_date'] = datetime.strptime(
+                        tag_dict['publication_date'] = datetime.strptime(
                             date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
                     # 報告書タイトル
@@ -432,6 +432,14 @@ class XbrlRead:
                         document_title = soup.find('ix:nonnumeric', attrs={'name': re.compile(
                             '^.*DocumentName')})
                         tag_dict['title'] = jaconv.normalize(document_title.text) if document_title is not None else None
+
+                    # 提出日
+                    if tag_dict['filing_date'] is None:
+                        filing_date = soup.find('ix:nonnumeric', attrs={'name': re.compile(
+                            '^.*filing_date')})
+                        if filing_date is not None:
+                            filing_date = jaconv.normalize(filing_date.text)
+                            tag_dict['filing_date'] = datetime.strptime(filing_date, "%Y年%m月%d日").strftime("%Y-%m-%d")
                     
                     # 会社名
                     if tag_dict['name'] is None:
@@ -506,7 +514,7 @@ class XbrlRead:
         master_df = master_df.drop_duplicates().reset_index()
 
         # カラムを並び替え
-        master_df = master_df[['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
+        master_df = master_df[['id', 'explain_id', 'publication_date', 'code', 'doc_element', 'doc_label', 'financial_statement', 'report_detail_cat',
                                'start_date', 'end_date', 'instant_date', 'namespace', 'unitref', 'format', 'element', 'element_label', 'context', 'numeric']]
 
         return master_df
@@ -561,7 +569,7 @@ class XbrlRead:
             return df
 
         # 辞書のキーを定義する
-        dict_columns = ['id', 'explain_id', 'reporting_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
+        dict_columns = ['id', 'explain_id', 'publication_date', 'code', 'doc_element', 'doc_label', 'financial_statement',
                         'report_detail_cat', 'start_date', 'end_date', 'instant_date',
                         'namespace',  'unitref', 'format', 'element', 'context', 'numeric']
 
@@ -617,7 +625,7 @@ class XbrlRead:
                             dict_tag['explain_id'] = self.id
 
                             # 報告日を登録
-                            dict_tag['reporting_date'] = self.reporting_date
+                            dict_tag['publication_date'] = self.publication_date
 
                             # 銘柄コードを登録
                             dict_tag['code'] = self.code
@@ -825,7 +833,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         # リストが空の場合は例外処理
@@ -849,7 +857,7 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order', 'weight']]
 
         return add_df, association_df
@@ -966,7 +974,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -990,7 +998,7 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
         
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         return add_df, association_df
@@ -1111,7 +1119,7 @@ class XbrlRead:
                                'element_label': 'from_element_label', 'element_x': 'element', 'namespace_x': 'namespace'})
 
         # 列を抽出する
-        add_df = add_df[['explain_id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['explain_id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
 
         # リストが空の場合は例外処理
@@ -1135,7 +1143,7 @@ class XbrlRead:
         association_df = self.__to_link_association(add_df)
 
         # カラムの順番を変更
-        add_df = add_df[['id', 'reporting_date', 'code', 'doc_element',
+        add_df = add_df[['id', 'publication_date', 'code', 'doc_element',
                          'namespace', 'element', 'from_element', 'from_element_label', 'order']]
         return add_df, association_df
 
