@@ -423,7 +423,8 @@ class XbrlRead:
                     if tag_dict['publication_date'] is None:
                         date_str = re.compile(
                             "[0-9]{8}").search(str(self.xbrl_zip_path)).group()
-                        tag_dict['publication_date'] = format_date(date_str)
+                        tag_dict['publication_date'] = datetime.strptime(
+                            date_str, "%Y%m%d").strftime("%Y-%m-%d")
 
                     # 報告書タイトル
                     if tag_dict['title'] is None:
