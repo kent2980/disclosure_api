@@ -37,14 +37,14 @@ def format_date(date_str):
     """
     try:
         # "令和4年10月3日"のフォーマット
-        date_obj = datetime.datetime.strptime(date_str, '%s%d年%m月%d日' % ('令和', '%Y', '%m', '%d'))
+        date_obj = datetime.strptime(date_str, '%s%d年%m月%d日' % ('令和', '%Y', '%m', '%d'))
     except ValueError:
         try:
             # "YYYY年MM月DD日"のフォーマット
-            date_obj = datetime.datetime.strptime(date_str, '%Y年%m月%d日')
+            date_obj = datetime.strptime(date_str, '%Y年%m月%d日')
         except ValueError:
             # "YYYY-MM-DD"のフォーマット
-            date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
     return date_obj.strftime('%Y-%m-%d')
 
 class MyException(Exception):
