@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import jaconv
 
 def format_date(date_str):
     """
@@ -53,3 +54,8 @@ print(standard_date2)  # Output: "2022-10-3"
 date_str3 = "2022-10-3"
 standard_date3 = format_date(date_str3)
 print(standard_date3)  # Output: "2022-10-3"
+
+date_str4 = "2022 年 10 月 26 日"
+date_str4 = jaconv.z2h(date_str4, kana=False, digit=True, ascii=True)
+standard_date2 = format_date(date_str2)
+print(standard_date2)  # Output: "2022-10-3"
