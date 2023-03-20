@@ -435,7 +435,7 @@ class XbrlRead:
                         filing_date = soup.find('ix:nonnumeric', attrs={'name': re.compile(
                             '^.*FilingDate')})
                         if filing_date is not None:
-                            filing_date = jaconv.normalize(filing_date.text)
+                            filing_date = jaconv.z2h(filing_date.text, kana=False, digit=True, ascii=True)
                             tag_dict['filing_date'] = format_date(filing_date)
                     
                     # 会社名
