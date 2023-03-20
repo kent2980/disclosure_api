@@ -35,27 +35,25 @@ def format_date(date_str):
         >>> format_date('2023-10-3')
         '2023-10-03'
     """
+    try:
+        pattern = r"[年月日]"
+        value = re.split(pattern, date_str)
 
-    # 正規表現で入力文字列をパースする
-    regex = r'(令和(\d+)年(\d+)月(\d+)日)|(\d+年(\d+)月(\d+)日)|(\d+-\d+-\d+)'
-    match = re.match(regex, date_str)
-    if not match:
-        raise ValueError(f"Unsupported date format: {date_str}")
-
-    # マッチしたグループから年月日を取り出す
-    groups = match.groups()
-    if groups[0]:
-        era, year, month, day = groups[1:]
-        year = int(year) + (2018 if era == '平成' else 1 if era == '令和' else 0)
-    elif groups[1]:
-        year, month, day = groups[2:]
-    else:
-        year, month, day = groups[7].split('-')
-    year, month, day = int(year), int(month), int(day)
-
-    # 年月日をdatetimeオブジェクトに変換し、'YYYY-MM-DD' 形式の文字列に変換する
-    date_obj = datetime(year, month, day)
-    return date_obj.strftime('%Y-%m-%d')
+        jc_to_ad = {'昭和': 1925, '平成': 1988, '令和': 2019}
+        pattern = r"\d+"
+        value[0] = str(int(jc_to_ad[re.sub(pattern, '', value[0])]) + int(re.findall(pattern,value[0])[0]))
+        date_obj = datetime.strptime(value[0]+value[1]+value[2],'%Y%m%d').strftime('%Y-%m-%d')
+        
+    except KeyError:
+        try:
+            # "YYYY年MM月DD日"のフォーマット
+            date_obj = datetime.strptime(date_str, '%Y年%m月%d日').strftime('%Y-%m-%d')
+        except ValueError:
+            # "YYYY-MM-DD"のフォーマット
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
+        
+        
+    return date_obj
 
 class MyException(Exception):
     """自作例外クラスの基底クラス
