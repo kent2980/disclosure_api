@@ -35,6 +35,12 @@ def format_date(date_str):
         >>> format_date('2023-10-3')
         '2023-10-03'
     """
+    
+    # 文字列を正規化します
+    date_str = jaconv.z2h(date_str, kana=False, digit=True, ascii=True)
+    date_str = ''.join(date_str.split())
+    
+    # "元号yy年MM月DD日"のフォーマット
     try:
         pattern = r"[年月日]"
         value = re.split(pattern, date_str)
@@ -435,7 +441,7 @@ class XbrlRead:
                         filing_date = soup.find('ix:nonnumeric', attrs={'name': re.compile(
                             '^.*FilingDate')})
                         if filing_date is not None:
-                            tag_dict['filing_date'] = format_date(jaconv.z2h(filing_date.text, kana=False, digit=True, ascii=True))
+                            tag_dict['filing_date'] = format_date(filing_date)
                     
                     # 会社名
                     if tag_dict['name'] is None:

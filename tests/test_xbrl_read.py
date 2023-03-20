@@ -23,6 +23,12 @@ def format_date(date_str):
         >>> format_date('2023-10-3')
         '2023-10-03'
     """
+    
+    # 文字列を正規化します
+    date_str = jaconv.z2h(date_str, kana=False, digit=True, ascii=True)
+    date_str = ''.join(date_str.split())
+    
+    # "元号yy年MM月DD日"のフォーマット
     try:
         pattern = r"[年月日]"
         value = re.split(pattern, date_str)
@@ -56,6 +62,5 @@ standard_date3 = format_date(date_str3)
 print(standard_date3)  # Output: "2022-10-3"
 
 date_str4 = "2022 年 10 月 26 日"
-date_str4 = jaconv.z2h(date_str4, kana=False, digit=True, ascii=True)
-standard_date2 = format_date(date_str2)
-print(standard_date2)  # Output: "2022-10-3"
+standard_date4 = format_date(date_str4)
+print(standard_date4)  # Output: "2022-10-3"
