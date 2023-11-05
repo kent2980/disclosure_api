@@ -474,14 +474,22 @@ class XbrlRead:
                                 tag_dict['period'] = 2
                     
                     # 会計期間開始日
-                    if tag_dict['start_date'] is None:
-                        start_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:startdate')
-                        tag_dict['start_date'] = start_date.text if start_date is not None else None 
+                    try:
+                        if tag_dict['start_date'] is None:
+                            start_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:startdate')
+                            tag_dict['start_date'] = start_date.text if start_date is not None else None
+                    except AttributeError as e:
+                        # 例外が発生した場合の処理
+                        tag_dict['start_date'] = None  # または他の適切な処理
 
                     # 会計期間終了日
-                    if tag_dict['end_date'] is None:
-                        end_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:enddate')
-                        tag_dict['end_date'] = end_date.text if end_date is not None else None 
+                    try:
+                        if tag_dict['end_date'] is None:
+                            end_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:enddate')
+                            tag_dict['end_date'] = end_date.text if end_date is not None else None  
+                    except AttributeError as e:
+                        # 例外が発生した場合の処理
+                        tag_dict['end_date'] = None  # または他の適切な処理
 
         # ***************************************************
         # JSONから取得
