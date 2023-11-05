@@ -382,7 +382,7 @@ class XbrlRead:
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
             ['id' , 'title', 'filing_date', 'publication_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
-             'consolidation_cat_label', 'report_cat', 'report_label', 'name'], None)
+             'consolidation_cat_label', 'report_cat', 'report_label', 'name', 'start_date', 'end_date'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
@@ -472,6 +472,16 @@ class XbrlRead:
                                 tag_dict['period'] = 4
                             elif period == 'HY':
                                 tag_dict['period'] = 2
+                    
+                    # 会計期間開始日
+                    if tag_dict['start_date'] is None:
+                        start_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:startdate')
+                        tag_dict['start_date'] = start_date.text if start_date is not None else None 
+
+                    # 会計期間終了日
+                    if tag_dict['end_date'] is None:
+                        end_date = soup.find(attrs={'id':'CurrentYearDuration'}).find('xbrli:enddate')
+                        tag_dict['end_date'] = end_date.text if end_date is not None else None 
 
         # ***************************************************
         # JSONから取得
