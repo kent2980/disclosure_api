@@ -382,7 +382,7 @@ class XbrlRead:
         # 空の辞書を作成
         tag_dict = dict.fromkeys(
             ['id' , 'title', 'filing_date', 'publication_date', 'code', 'period', 'period_division', 'period_division_label', 'consolidation_cat',
-             'consolidation_cat_label', 'report_cat', 'report_label', 'name', 'start_date', 'end_date'], None)
+             'consolidation_cat_label', 'report_cat', 'report_label', 'name', 'start_date', 'end_date', 'period_year'], None)
 
         # Zipファイルを展開する
         with zipfile.ZipFile(self.xbrl_zip_path, 'r') as zip_data:
@@ -490,6 +490,12 @@ class XbrlRead:
                     except AttributeError as e:
                         # 例外が発生した場合の処理
                         tag_dict['end_date'] = None  # または他の適切な処理
+                        
+                    # 会計年度
+                    if tag_dict['end_date'] is not None:
+                        tag_dict['period_year'] = datetime.strptime(tag_dict['end_date'], "%Y-%m-%d").year
+                    else:
+                        tag_dict['period_year'] = None
 
         # ***************************************************
         # JSONから取得
