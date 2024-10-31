@@ -15,7 +15,7 @@ parent_dir = dirname(abspath(__file__))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-from util._function import date_range
+from disclosure_api.util import date_range
 
 
 class OutputPathIsNoneException(Exception):
@@ -88,7 +88,7 @@ class TdnetRequest:
             if "f" in locals():
                 f.close()
 
-    def getXBRL_link(self, dte: date = None) -> list:
+    def getXBRL_link(self, dte: datetime.date = None) -> list:
         """TDNETからXBRLをダウンロードします。
 
         Args:
@@ -102,7 +102,7 @@ class TdnetRequest:
         """
 
         # 日付が未設定の場合、例外が発生
-        if date is None:
+        if datetime.date is None:
             raise DateIsNoneException()
 
         # ファイルのリンクパスリスト
@@ -193,7 +193,7 @@ class TdnetRequest:
                         urllib.request.urlretrieve(xbrl_link, local_file_path)
 
                         # 1秒待機
-                        time.sleep(0.1)
+                        time.sleep(3)
 
                         # プログレスバーの表示をアップデート
                         bar.update(1)
@@ -223,7 +223,9 @@ class TdnetRequest:
 
         return save_f_list
 
-    def getXBRL_link_daterange(self, start: date = None, end: date = None):
+    def getXBRL_link_daterange(
+        self, start: datetime.date = None, end: datetime.date = None
+    ):
         """TDNETから対象期間に公表されたXBRLをダウンロードします。
 
         Args:
@@ -241,7 +243,7 @@ class TdnetRequest:
 
 if __name__ == "__main__":
 
-    outputPath = "/Users/user/Documents/tdnet/xbrl/20241031"
+    outputPath = "/Users/user/Documents/tdnet/xbrl"
     tdnet = TdnetRequest(outputPath)
     today = datetime.date(2024, 10, 31)
     tdnet.getXBRL_link(today)
