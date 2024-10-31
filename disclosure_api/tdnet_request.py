@@ -1,12 +1,14 @@
-import urllib.request, urllib.error
-from bs4 import BeautifulSoup
-from datetime import date,timedelta
-import time
-import requests
+import datetime
 import os
-from tqdm import tqdm
-from os.path import dirname, abspath
 import sys
+import time
+import urllib.error
+import urllib.request
+from os.path import abspath, dirname
+
+import requests
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 # 絶対パスをsys.pathに登録する
 parent_dir = dirname(abspath(__file__))
@@ -15,29 +17,33 @@ if parent_dir not in sys.path:
 
 from util._function import date_range
 
+
 class OutputPathIsNoneException(Exception):
     """出力先パスが"None"の際に設定する例外
 
     Args:
         Exception (_type_): 基底例外クラス
     """
+
     def __str__(self) -> str:
         return "出力先パスを設定してください。"
-    
+
+
 class DateIsNoneException(Exception):
     """日付が"None"の際に設定する例外
 
     Args:
         Exception (_type_): 基底例外クラス
     """
+
     def __str__(self) -> str:
         return "日付を設定してください。"
 
-class TdnetRequest:
-    """TDNETからXBRLをダウンロードする機能を提供します。
-    """
 
-    def __init__(self, output_dir:str=None) -> None:
+class TdnetRequest:
+    """TDNETからXBRLをダウンロードする機能を提供します。"""
+
+    def __init__(self, output_dir: str = None) -> None:
         """TDNETからXBRLをダウンロードする機能を提供します。
 
         Args:
@@ -49,8 +55,8 @@ class TdnetRequest:
         if output_dir is None:
             raise OutputPathIsNoneException()
         self.output_dir = output_dir
-    
-    def __isfile(self, filename:str, saveDir) -> bool:
+
+    def __isfile(self, filename: str, saveDir) -> bool:
         """出力先ファイルの存在を判定
 
         Args:
@@ -63,7 +69,7 @@ class TdnetRequest:
         path = f"{saveDir}/{filename}"
         flag = os.path.isfile(path)
         return flag
-    
+
     def __link_check(self, url: str) -> bool:
         """リンクが有効であるか判定する
 
@@ -81,8 +87,8 @@ class TdnetRequest:
         finally:
             if "f" in locals():
                 f.close()
-        
-    def getXBRL_link(self, dte:date=None) -> list:
+
+    def getXBRL_link(self, dte: date = None) -> list:
         """TDNETからXBRLをダウンロードします。
 
         Args:
@@ -94,73 +100,73 @@ class TdnetRequest:
         Returns:
             list: ファイルの保存パスリスト
         """
-        
+
         # 日付が未設定の場合、例外が発生
         if date is None:
             raise DateIsNoneException()
-        
+
         # ファイルのリンクパスリスト
         file_list = []
-        
+
         # 保存ファイルのリスト
         save_f_list = []
-        
+
         # 保存フォルダ
         saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
-        
+
         # 保存先フォルダが存在しない場合は新規作成する
         if not os.path.exists(saveDir):
             os.makedirs(saveDir)
-        
+
         # ページの存在可否フラグ
         flag = True
-        
+
         # ページ番号
         p = 0
-        
+
         # ファイルリストカウント
         n = 1
-        
+
         # Trueの間は処理を繰り返す
         while flag == True:
-            
+
             # ページ番号をカウントアップ
             p += 1
-            
+
             # 指定された日付のTDNET:URLを生成する
-            url =f'https://www.release.tdnet.info/inbs/I_list_{p:03}_{dte.strftime("%Y%m%d")}.html'
-            
+            url = f'https://www.release.tdnet.info/inbs/I_list_{p:03}_{dte.strftime("%Y%m%d")}.html'
+
             # 有効なURLか判定する
             flag = self.__link_check(url)
-            
+
             # 有効なURLだった場合
             if flag == True:
-                
+
                 # URLからHTMLを読み込む
                 url_txt = requests.get(url).text
-                
+
                 # HTMLをスクレイピング
-                soup = BeautifulSoup(url_txt, 'html.parser')
-                
+                soup = BeautifulSoup(url_txt, "html.parser")
+
                 # ファイル名をリストに追加
-                for el in soup.find_all('div', class_='xbrl-mask'):
+                for el in soup.find_all("div", class_="xbrl-mask"):
                     file_list.append(el.a["href"])
-                
+
         # ファイル名がリストに存在する場合
         if len(file_list) > 0:
-            
+
             # ダウンロード開始のメッセージを表示
             print("*********************************************************")
             print(f"\n     {dte.strftime('%Y年%m月%d日')}公表分をダウンロード...\n")
             print("*********************************************************\n")
-            
+
             # 新規のファイルリストを作成
             for file_name in file_list:
                 # ファイルの存在可否を問い合わせ
                 if not self.__isfile(file_name, saveDir):
                     # 新規ファイル名をリストに追加
                     save_f_list.append(file_name)
-            
+
             if len(save_f_list) > 0:
 
                 # ******************************************
@@ -171,45 +177,53 @@ class TdnetRequest:
                 with tqdm(total=len(save_f_list)) as bar:
 
                     for file_name in save_f_list:
-                        
+
                         # ファイルのダウンロード中カウント遷移
-                        bar.set_description(f'  {n}/{len(save_f_list)} 件 ダウンロード中...')
-                            
+                        bar.set_description(
+                            f"  {n}/{len(save_f_list)} 件 ダウンロード中..."
+                        )
+
                         # ダウンロードリンクを生成
-                        xbrl_link = f'https://www.release.tdnet.info/inbs/{file_name}'
-                        
+                        xbrl_link = f"https://www.release.tdnet.info/inbs/{file_name}"
+
                         # ローカルの保存パス
-                        local_file_path = f'{saveDir}/{file_name}'
-                        
+                        local_file_path = f"{saveDir}/{file_name}"
+
                         # ローカルにダウンロード
                         urllib.request.urlretrieve(xbrl_link, local_file_path)
-                        
+
                         # 1秒待機
                         time.sleep(0.1)
-                        
+
                         # プログレスバーの表示をアップデート
                         bar.update(1)
-                        
+
                         # リストのファイル数をカウント
-                        n += 1          
+                        n += 1
 
                 # ファイルダウンロード完了後のメッセージ
-                print(f"\n     適時開示情報を{len(save_f_list)}件 新規ダウンロードしました。")
+                print(
+                    f"\n     適時開示情報を{len(save_f_list)}件 新規ダウンロードしました。"
+                )
             else:
                 print(f"\n     適時開示情報の新規ダウンロードはありません。")
-            
+
             # 新規ダウンロードの可否に関わらない共通メッセージ
-            print(f"     {dte.strftime('%Y年%m月%d日')}に発表された適時開示情報は{len(file_list)}件です。\n")
-                
+            print(
+                f"     {dte.strftime('%Y年%m月%d日')}に発表された適時開示情報は{len(file_list)}件です。\n"
+            )
+
         # ファイルリストが空の場合
-        else:            
+        else:
             # メッセージ
             print("*********************************************************\n")
-            print(f"     {dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n")
-        
+            print(
+                f"     {dte.strftime('%Y年%m月%d日')}は適時開示の発表がありません。\n"
+            )
+
         return save_f_list
-    
-    def getXBRL_link_daterange(self, start:date=None, end:date=None):
+
+    def getXBRL_link_daterange(self, start: date = None, end: date = None):
         """TDNETから対象期間に公表されたXBRLをダウンロードします。
 
         Args:
@@ -224,16 +238,10 @@ class TdnetRequest:
         for dte in date_range(start, end):
             self.getXBRL_link(dte)
 
+
 if __name__ == "__main__":
-    
-    start_dte = date(2022,12,10)
-    
-    end_dte = date.today()
-    
-    while start_dte <= end_dte:
-        
-        out_path = "D:/ZIP/"
-        tdnet = TdnetRequest(out_path)
-        tdnet.getXBRL_link((start_dte))
-        
-        start_dte += timedelta(days=1)
+
+    outputPath = "/Users/user/Documents/tdnet/xbrl/20241031"
+    tdnet = TdnetRequest(outputPath)
+    today = datetime.date(2024, 10, 31)
+    tdnet.getXBRL_link(today)
