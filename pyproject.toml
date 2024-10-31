@@ -11,10 +11,10 @@ python = "^3.8"
 pandas = "^1.5.1"
 requests = "^2.28.1"
 tqdm = "^4.64.1"
-bs4 = "^0.0.1"
 lxml = "^4.6.3"
 pymysql = "^1.0.2"
 jaconv = "^0.3.4"
+beautifulsoup4 = "^4.12.3"
 
 [build-system]
 requires = ["poetry-core"]

@@ -22,19 +22,6 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
-name = "bs4"
-version = "0.0.1"
-description = "Dummy package for Beautiful Soup"
-optional = false
-python-versions = "*"
-files = [
-    {file = "bs4-0.0.1.tar.gz", hash = "sha256:36ecea1fd7cc5c0c6e4a1ff075df26d50da647b75376626cc186e2212886dd3a"},
-]
-
-[package.dependencies]
-beautifulsoup4 = "*"
-
-[[package]]
 name = "certifi"
 version = "2024.8.30"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -572,4 +559,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "48267f59986f70509990fb9b15c66434446e783fc946a1a7832068c781ffeb2f"
+content-hash = "ade73e36b20a77b395e13d2830eee8933bbdbcc8ad875a6c2595a3127ff38034"
