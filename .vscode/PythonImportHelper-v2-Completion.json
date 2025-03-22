@@ -1,0 +1,289 @@
+[
+    {
+        "label": "datetime",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "datetime",
+        "description": "datetime",
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "timedelta",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "Decimal",
+        "importPath": "decimal",
+        "description": "decimal",
+        "isExtraImport": true,
+        "detail": "decimal",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "urllib.error",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "urllib.error",
+        "description": "urllib.error",
+        "detail": "urllib.error",
+        "documentation": {}
+    },
+    {
+        "label": "urllib.request",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "urllib.request",
+        "description": "urllib.request",
+        "detail": "urllib.request",
+        "documentation": {}
+    },
+    {
+        "label": "abspath",
+        "importPath": "os.path",
+        "description": "os.path",
+        "isExtraImport": true,
+        "detail": "os.path",
+        "documentation": {}
+    },
+    {
+        "label": "dirname",
+        "importPath": "os.path",
+        "description": "os.path",
+        "isExtraImport": true,
+        "detail": "os.path",
+        "documentation": {}
+    },
+    {
+        "label": "requests",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "requests",
+        "description": "requests",
+        "detail": "requests",
+        "documentation": {}
+    },
+    {
+        "label": "BeautifulSoup",
+        "importPath": "bs4",
+        "description": "bs4",
+        "isExtraImport": true,
+        "detail": "bs4",
+        "documentation": {}
+    },
+    {
+        "label": "tqdm",
+        "importPath": "tqdm",
+        "description": "tqdm",
+        "isExtraImport": true,
+        "detail": "tqdm",
+        "documentation": {}
+    },
+    {
+        "label": "date_range",
+        "importPath": "disclosure_api.util",
+        "description": "disclosure_api.util",
+        "isExtraImport": true,
+        "detail": "disclosure_api.util",
+        "documentation": {}
+    },
+    {
+        "label": "TdnetRequest",
+        "importPath": "disclosure_api.tdnet_request",
+        "description": "disclosure_api.tdnet_request",
+        "isExtraImport": true,
+        "detail": "disclosure_api.tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "re",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "re",
+        "description": "re",
+        "detail": "re",
+        "documentation": {}
+    },
+    {
+        "label": "jaconv",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "jaconv",
+        "description": "jaconv",
+        "detail": "jaconv",
+        "documentation": {}
+    },
+    {
+        "label": "date_range",
+        "kind": 2,
+        "importPath": "disclosure_api.util._function",
+        "description": "disclosure_api.util._function",
+        "peekOfCode": "def date_range(start, stop, step = timedelta(1)) -> date:\n    current = start\n    while current <= stop:\n        yield current\n        current += step\ndef decimal_normalize(f:Decimal):\n    if not isinstance(f, str):\n        def _remuve_exponent(d:Decimal):\n            return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()\n        a = Decimal.normalize(Decimal(str(f)))",
+        "detail": "disclosure_api.util._function",
+        "documentation": {}
+    },
+    {
+        "label": "decimal_normalize",
+        "kind": 2,
+        "importPath": "disclosure_api.util._function",
+        "description": "disclosure_api.util._function",
+        "peekOfCode": "def decimal_normalize(f:Decimal):\n    if not isinstance(f, str):\n        def _remuve_exponent(d:Decimal):\n            return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()\n        a = Decimal.normalize(Decimal(str(f)))\n        b = _remuve_exponent(a)\n        c = '{:,}'.format(b)\n        return str(c)\n    else:\n        return '-'",
+        "detail": "disclosure_api.util._function",
+        "documentation": {}
+    },
+    {
+        "label": "OutputPathIsNoneException",
+        "kind": 6,
+        "importPath": "disclosure_api.tdnet_request",
+        "description": "disclosure_api.tdnet_request",
+        "peekOfCode": "class OutputPathIsNoneException(Exception):\n    \"\"\"出力先パスが\"None\"の際に設定する例外\n    Args:\n        Exception (_type_): 基底例外クラス\n    \"\"\"\n    def __str__(self) -> str:\n        return \"出力先パスを設定してください。\"\nclass DateIsNoneException(Exception):\n    \"\"\"日付が\"None\"の際に設定する例外\n    Args:",
+        "detail": "disclosure_api.tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "DateIsNoneException",
+        "kind": 6,
+        "importPath": "disclosure_api.tdnet_request",
+        "description": "disclosure_api.tdnet_request",
+        "peekOfCode": "class DateIsNoneException(Exception):\n    \"\"\"日付が\"None\"の際に設定する例外\n    Args:\n        Exception (_type_): 基底例外クラス\n    \"\"\"\n    def __str__(self) -> str:\n        return \"日付を設定してください。\"\nclass TdnetRequest:\n    \"\"\"TDNETからXBRLをダウンロードする機能を提供します。\"\"\"\n    def __init__(self, output_dir: str = None) -> None:",
+        "detail": "disclosure_api.tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "TdnetRequest",
+        "kind": 6,
+        "importPath": "disclosure_api.tdnet_request",
+        "description": "disclosure_api.tdnet_request",
+        "peekOfCode": "class TdnetRequest:\n    \"\"\"TDNETからXBRLをダウンロードする機能を提供します。\"\"\"\n    def __init__(self, output_dir: str = None) -> None:\n        \"\"\"TDNETからXBRLをダウンロードする機能を提供します。\n        Args:\n            output_dir (str, optional): 出力先パス\n        Raises:\n            OutputPathIsNoneException: 出力先未設定エラー\n        \"\"\"\n        if output_dir is None:",
+        "detail": "disclosure_api.tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "parent_dir",
+        "kind": 5,
+        "importPath": "disclosure_api.tdnet_request",
+        "description": "disclosure_api.tdnet_request",
+        "peekOfCode": "parent_dir = dirname(abspath(__file__))\nif parent_dir not in sys.path:\n    sys.path.append(parent_dir)\nfrom disclosure_api.util import date_range\nclass OutputPathIsNoneException(Exception):\n    \"\"\"出力先パスが\"None\"の際に設定する例外\n    Args:\n        Exception (_type_): 基底例外クラス\n    \"\"\"\n    def __str__(self) -> str:",
+        "detail": "disclosure_api.tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "test_request",
+        "kind": 2,
+        "importPath": "tests.test_tdnet_request",
+        "description": "tests.test_tdnet_request",
+        "peekOfCode": "def test_request():\n    assert TdnetRequest().getXBRL_link() > 0",
+        "detail": "tests.test_tdnet_request",
+        "documentation": {}
+    },
+    {
+        "label": "format_date",
+        "kind": 2,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "def format_date(date_str):\n    \"\"\"\n    日付文字列を受け取り、統一的なフォーマット 'YYYY-MM-DD' に変換する。\n    Args:\n        date_str (str): \"令和4年10月3日\"、\"2023年10月3日\"、\"2023-10-3\" のいずれかの形式の日付文字列。\n    Returns:\n        str: 'YYYY-MM-DD' 形式の日付文字列。\n    Raises:\n        ValueError: 引数がサポートされていない形式の日付文字列の場合。\n    Examples:",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "date_str2",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "date_str2 = \"2022年10月3日\"\nstandard_date2 = format_date(date_str2)\nprint(standard_date2)  # Output: \"2022-10-3\"\ndate_str3 = \"2022-10-3\"\nstandard_date3 = format_date(date_str3)\nprint(standard_date3)  # Output: \"2022-10-3\"\ndate_str4 = \"2022 年 10 月 26 日\"\nstandard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "standard_date2",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "standard_date2 = format_date(date_str2)\nprint(standard_date2)  # Output: \"2022-10-3\"\ndate_str3 = \"2022-10-3\"\nstandard_date3 = format_date(date_str3)\nprint(standard_date3)  # Output: \"2022-10-3\"\ndate_str4 = \"2022 年 10 月 26 日\"\nstandard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "date_str3",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "date_str3 = \"2022-10-3\"\nstandard_date3 = format_date(date_str3)\nprint(standard_date3)  # Output: \"2022-10-3\"\ndate_str4 = \"2022 年 10 月 26 日\"\nstandard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "standard_date3",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "standard_date3 = format_date(date_str3)\nprint(standard_date3)  # Output: \"2022-10-3\"\ndate_str4 = \"2022 年 10 月 26 日\"\nstandard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "date_str4",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "date_str4 = \"2022 年 10 月 26 日\"\nstandard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    },
+    {
+        "label": "standard_date4",
+        "kind": 5,
+        "importPath": "tests.test_xbrl_read",
+        "description": "tests.test_xbrl_read",
+        "peekOfCode": "standard_date4 = format_date(date_str4)\nprint(standard_date4)  # Output: \"2022-10-3\"",
+        "detail": "tests.test_xbrl_read",
+        "documentation": {}
+    }
+]

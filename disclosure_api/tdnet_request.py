@@ -112,11 +112,10 @@ class TdnetRequest:
         save_f_list = []
 
         # 保存フォルダ
-        saveDir = f'{self.output_dir}/{dte.strftime("%Y%m%d")}'
+        saveDir = f'{self.output_dir}/{dte.strftime("%Y年")}/{dte.strftime("%m月")}/{dte.strftime("%Y%m%d")}'
 
         # 保存先フォルダが存在しない場合は新規作成する
-        if not os.path.exists(saveDir):
-            os.makedirs(saveDir)
+        os.makedirs(saveDir, exist_ok=True)
 
         # ページの存在可否フラグ
         flag = True
@@ -245,5 +244,5 @@ if __name__ == "__main__":
 
     outputPath = "/Users/user/Documents/tdnet/xbrl"
     tdnet = TdnetRequest(outputPath)
-    today = datetime.date(2024, 10, 31)
+    today = datetime.date(2024, 11, 8)
     tdnet.getXBRL_link(today)
